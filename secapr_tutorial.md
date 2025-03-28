@@ -1,8 +1,8 @@
 ## Set up
-We installed `secaper` from:
+We installed `secapr` from:
 https://github.com/AntonelliLab/seqcap_processor
 
-See `secaper_installation.md`
+See `secapr_installation.md`
 
 #### Login to hazel
 ```

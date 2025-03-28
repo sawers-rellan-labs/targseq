@@ -1,6 +1,6 @@
 ### Install
 
-We installed `secaper` from:
+We installed `secapr` from:
 https://github.com/AntonelliLab/seqcap_processor
 
 

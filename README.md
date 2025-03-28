@@ -1,2 +1,2 @@
 # Targetseq
-Bzea target sequencing of HOC1 and nitroge genes
+Bzea target sequencing of HPC1 and nitrogen genes

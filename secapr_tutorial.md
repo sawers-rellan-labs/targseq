@@ -2,7 +2,7 @@
 We installed `secaper` from:
 https://github.com/AntonelliLab/seqcap_processor
 
-See `secaper_install.md`
+See `secaper_installation.md`
 
 #### Login to hazel
 ```
@@ -14,7 +14,7 @@ ssh user@login.hcp.ncsu.edu
 bsub -q sara -Is -n 8 -R "rusage[mem=128]" -W 8:00 bash
 ```
 
-#### Activate `secaper` conda environment
+#### Activate `secapr` conda environment
 ```
 conda activate /usr/local/usrapps/maize/user/secapr_env
 ```
@@ -45,7 +45,8 @@ mkdir testout
 ```
 
 ## Tutorial
-We are following the tutorial from with our own data
+We are following the [secapr tutorial](https://htmlpreview.github.io/?https://github.com/AntonelliLab/seqcap_processor/blob/master/docs/documentation/tutorial.html)
+with our own data
 
 ### *De novo* assembly 
 

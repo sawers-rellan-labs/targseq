@@ -6,7 +6,7 @@ See `secaper_installation.md`
 
 #### Login to hazel
 ```
-ssh user@@login.hpc.ncsu.edu
+ssh user@login.hpc.ncsu.edu
 ```
 
 #### Request an interactive session
@@ -24,6 +24,17 @@ conda activate /usr/local/usrapps/maize/user/secapr_env
 tree ../targseq
 ```
 
+#### Create a subset of data for testing
+```
+mkdir testin
+ls -1  data/*fastq.gz | tail -n 8 | xargs -I{} cp {} testin
+```
+
+
+```
+tree ../targseq
+```
+
 ```
 .
 |--|data
@@ -32,11 +43,7 @@ tree ../targseq
     |--|testout
     
 ```
-#### Create a subset of data for testing
-```
-mkdir testin
-ls -1  data/*fastq.gz | tail -n 8 | xargs -I{} cp {} testin
-```
+
 
 #### Execute code from your user folder
 ```

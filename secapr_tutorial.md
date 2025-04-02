@@ -65,13 +65,16 @@ secapr quality_check --input  ../testin/ --output testout/qc
 
 #### Clean reads
 
-
+Make sample annotation table
 ```
 ls -1 ../testin/ | \
    perl -pe 's/^(.*?)_L001/$1,$1\_L001/' | \
    sed 's/\.fastq\.gz//g' \
    > sample_annotation.csv
+```
 
+Run clean command 
+```
 secapr clean_reads \
        --input ../testin \
        --read_min 200000 \

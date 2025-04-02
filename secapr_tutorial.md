@@ -25,10 +25,26 @@ tree ../targseq
 ```
 
 #### Create a subset of data for testing
+
+```
+# selecting first four samples for test
+# ls -1  data/*fastq.gz | tail -n 8 | xargs -I{} cp {} testin
+# Didn't work files too large to test
+```
+
+check for small files
+```
+ls  -aFlhSr data| head -n 20
+```
+
+select some megabase size files for the test
+
 ```
 mkdir testin
-ls -1  data/*fastq.gz | tail -n 8 | xargs -I{} cp {} testin
+ls -1 data | grep -P "_S20_|_S27_|_S29_" | xargs -I{} cp data/{} testin
 ```
+
+
 
 
 ```
@@ -77,7 +93,7 @@ Run clean command
 ```
 secapr clean_reads \
        --input ../testin \
-       --read_min 200000 \
+       --read_min 190000 \
        --sample_annotation_file sample_annotation.csv \
        --output testout/clean
 ```

@@ -21,6 +21,7 @@ conda activate /usr/local/usrapps/maize/user/secapr_env
 
 #### Directory structure
 ```
+cd /rsstu/users/r/rrellan/BZea/targseq/
 tree ../targseq
 ```
 

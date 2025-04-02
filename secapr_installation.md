@@ -17,8 +17,7 @@ This step should be run from the login node.
 ```
 
 #### Additional packages
-`fasp` 
-https://github.com/OpenGene/fastp
+`fasp`  from https://github.com/OpenGene/fastp
 
 ```
  conda install -c bioconda fastp

@@ -64,8 +64,16 @@ secapr quality_check --input  ../testin/ --output testout/qc
 
 
 #### Clean reads
+
+
 ```
-secapr clean_reads --input testin  --output testout
+ls -1 ../testin/ | perl -pe 's/^(.*?)_/$1,$1\_/'| sed 's/\.fastq\.gz//g' > sample_annotation.csv
+secapr clean_reads \
+       --input ../testin \
+       --sample_annotation_file sample_annotation.csv \
+       --output testout/clean
 ```
+
+secapr clean_reads --input test/  --sample_annotation_file sample_annotation.csv --output testout
 
 ### Reference assembly

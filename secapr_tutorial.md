@@ -82,6 +82,4 @@ secapr clean_reads \
        --output testout/clean
 ```
 
-secapr clean_reads --input test/  --sample_annotation_file sample_annotation.csv --output testout
-
 ### Reference assembly

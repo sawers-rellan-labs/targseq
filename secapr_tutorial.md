@@ -67,9 +67,14 @@ secapr quality_check --input  ../testin/ --output testout/qc
 
 
 ```
-ls -1 ../testin/ | perl -pe 's/^(.*?)_/$1,$1\_/'| sed 's/\.fastq\.gz//g' > sample_annotation.csv
+ls -1 ../testin/ | \
+   perl -pe 's/^(.*?)_L001/$1,$1\_L001/' | \
+   sed 's/\.fastq\.gz//g' \
+   > sample_annotation.csv
+
 secapr clean_reads \
        --input ../testin \
+       --read_min 200000 \
        --sample_annotation_file sample_annotation.csv \
        --output testout/clean
 ```

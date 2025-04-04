@@ -50,26 +50,22 @@ select some megabase size files for the test
 
 ```
 mkdir testin
-ls -1 ../data | grep -P "_S20_|_S27_|_S29_" | xargs -I{} cp data/{} testin
-# ls -1 ../data | grep -P "_S27_|_S1_|_S9_" | xargs -I{} cp data/{} raw
+ls -1 ../data | grep -P "_S20_|_S27_|_S29_" | xargs -I{} cp ../data/{} testin
+# ls -1 ../data | grep -P "_S27_|_S1_|_S9_" | xargs -I{} cp ../data/{} raw
 ```
 
 
 
 ```
-tree ../targseq
+tree ./
 ```
 
 ```
-.
-|--|data
-|--|testin
+
 |--|user
     |--|testout
-    
+    |--|testin
 ```
-
-
 
 
 ## Tutorial
@@ -80,7 +76,7 @@ with our own data
 
 #### Quality check
 ```
-secapr quality_check --input  ../testin/ --output testout/qc
+secapr quality_check --input  testin/ --output testout/qc
 ```
 
 #### Clean reads

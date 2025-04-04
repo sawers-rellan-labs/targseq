@@ -82,7 +82,7 @@ secapr quality_check --input  testin/ --output testout/qc
 #### Clean reads
 Make sample annotation table
 ```
-ls -1 ../testin/ | \
+ls -1 testin/ | \
    perl -pe 's/^(.*?)_L001/$1,$1\_L001/' | \
    sed 's/\.fastq\.gz//g' \
    > sample_annotation.csv

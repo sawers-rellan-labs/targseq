@@ -89,13 +89,15 @@ Zx0550_P4_P3_P5311_S20,Zx0550_P4_P3_P5311_S20_L001_R2_001.fastq
 Zx0580_P2_P5_P2411_S29,Zx0580_P2_P5_P2411_S29_L001_R1_001.fastq
 Zx0580_P2_P5_P2411_S29,Zx0580_P2_P5_P2411_S29_L001_R2_001.fastq
 ```
-
+You can make ut ias a spreadsheet and save it as csv.
+But we'll run a shell command using perl and regex to generate the annotation file from the folser contents.
 ```
 ls -1 testin/ | \
    perl -pe 's/^(.*?)_L001/$1,$1\_L001/' | \
    sed 's/\.fastq\.gz//g' \
    > sample_annotation.csv
 ```
+
 
 The originial command in the tutorial does nopt work because it is an old version.
 

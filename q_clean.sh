@@ -43,14 +43,10 @@ while IFS=$'\t' read -r SAMPLE_ID FILENAME; do
              -o "logs/fastp_${SAMPLE_ID}.out" \
              -e "logs/fastp_${SAMPLE_ID}.err" \
              -n 4 -R "rusage[mem=4G]" \
-             "fastp -i ${R1} -I ${R2} -o ${OUT_R1} -O ${OUT_R2} \
-                    --detect_adapter_for_pe \
-                    --correction \
-                    --cut_front \
-                    --cut_tail \
-                    --cut_window_size 4 \
-                    --cut_mean_quality 20 \
-                    --qualified_quality_phred 20 \
+             -W 60 \
+             "fastp -w 4 -i ${R1} -I ${R2} -o ${OUT_R1} -O ${OUT_R2} \
+                    --dedup \
+                    --qualified_quality_phred 30 \
                     --length_required 50 \
                     --html ${CLEAN_DIR}/${SAMPLE_ID}_fastp.html \
                     --json ${CLEAN_DIR}/${SAMPLE_ID}_fastp.json"

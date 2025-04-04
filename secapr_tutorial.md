@@ -43,8 +43,8 @@ select some megabase size files for the test
 ```
 mkdir testin
 ls -1 data | grep -P "_S20_|_S27_|_S29_" | xargs -I{} cp data/{} testin
+# ls -1 ../data | grep -P "_S27_|_S1_|_S9_" | xargs -I{} cp data/{} raw
 ```
-
 
 
 
@@ -79,7 +79,6 @@ with our own data
 secapr quality_check --input  ../testin/ --output testout/qc
 ```
 
-
 #### Clean reads
 
 Make sample annotation table
@@ -93,10 +92,16 @@ ls -1 ../testin/ | \
 Run clean command 
 ```
 secapr clean_reads \
-       --input ../testin \
+       --input raw \
        --read_min 190000 \
        --sample_annotation_file sample_annotation.csv \
-       --output testout/clean
+       --output clean
 ```
+
+
+it is not working see
+
+https://github.com/AntonelliLab/seqcap_processor/issues/41
+
 
 ### Reference assembly

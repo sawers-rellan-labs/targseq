@@ -100,7 +100,7 @@ That version needed `adapter_info.txt`, but tyhe current version without it.
 Run clean command 
 ```
 secapr clean_reads \
-       --input raw \
+       --input testin \
        --read_min 190000 \
        --sample_annotation_file sample_annotation.csv \
        --output clean

@@ -89,6 +89,13 @@ ls -1 ../testin/ | \
    > sample_annotation.csv
 ```
 
+unzip gz files
+```
+cd testin
+gunzip *
+cd ..
+```
+
 Run clean command 
 ```
 secapr clean_reads \

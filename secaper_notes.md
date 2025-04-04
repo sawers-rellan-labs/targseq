@@ -102,11 +102,11 @@ ls -1 testin/ | \
 The originial command in the tutorial does nopt work because it is an old version.
 
 ```
-secapr clean_reads --input pipeline_exercise/fastq_raw/ --config pipeline_exercise/adapter_info.txt --output pipeline_exercise/cleaned_trimmed_reads --index singlepipeline_exercise/fastqc_results/raw
+# secapr clean_reads --input pipeline_exercise/fastq_raw/ --config pipeline_exercise/adapter_info.txt --output pipeline_exercise/cleaned_trimmed_reads --index singlepipeline_exercise/fastqc_results/raw
 ```
 That version needed `adapter_info.txt`, but tyhe current version without it.
 
-
+This new command is supossed to work
 
 Run clean command 
 ```

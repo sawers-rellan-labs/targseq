@@ -80,7 +80,6 @@ secapr quality_check --input  testin/ --output testout/qc
 ```
 
 #### Clean reads
-
 Make sample annotation table
 ```
 ls -1 ../testin/ | \
@@ -88,6 +87,15 @@ ls -1 ../testin/ | \
    sed 's/\.fastq\.gz//g' \
    > sample_annotation.csv
 ```
+
+The originial command in the tutorial does nopt work because it is an old version.
+
+```
+secapr clean_reads --input pipeline_exercise/fastq_raw/ --config pipeline_exercise/adapter_info.txt --output pipeline_exercise/cleaned_trimmed_reads --index singlepipeline_exercise/fastqc_results/raw
+```
+That version needed `adapter_info.txt`, but tyhe current version without it.
+
+
 
 Run clean command 
 ```

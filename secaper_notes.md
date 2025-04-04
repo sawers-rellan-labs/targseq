@@ -80,7 +80,16 @@ secapr quality_check --input  testin/ --output testout/qc
 ```
 
 #### Clean reads
-Make sample annotation table
+Make sample annotation table is a table relateing sample names to the sastqc files.
+```
+Zx0540_P3_P5_P1111_S27,Zx0540_P3_P5_P1111_S27_L001_R1_001.fastq
+Zx0540_P3_P5_P1111_S27,Zx0540_P3_P5_P1111_S27_L001_R2_001.fastq
+Zx0550_P4_P3_P5311_S20,Zx0550_P4_P3_P5311_S20_L001_R1_001.fastq
+Zx0550_P4_P3_P5311_S20,Zx0550_P4_P3_P5311_S20_L001_R2_001.fastq
+Zx0580_P2_P5_P2411_S29,Zx0580_P2_P5_P2411_S29_L001_R1_001.fastq
+Zx0580_P2_P5_P2411_S29,Zx0580_P2_P5_P2411_S29_L001_R2_001.fastq
+```
+
 ```
 ls -1 testin/ | \
    perl -pe 's/^(.*?)_L001/$1,$1\_L001/' | \

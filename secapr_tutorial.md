@@ -19,15 +19,17 @@ bsub -q sara -Is -n 8 -R "rusage[mem=128]" -W 8:00 bash
 conda activate /usr/local/usrapps/maize/user/secapr_env
 ```
 
+
 #### Execute code from your user folder
 ```
+cd /rsstu/users/r/rrellan/BZea/targseq/
 cd user
+mkdir testin
 mkdir testout
 ```
 
 #### Directory structure
 ```
-cd /rsstu/users/r/rrellan/BZea/targseq/
 tree ../targseq
 ```
 
@@ -41,18 +43,18 @@ tree ../targseq
 
 check for small files
 ```
-ls  -aFlhSr data| head -n 20
+ls  -aFlhSr ../data| head -n 20
 ```
 
 select some megabase size files for the test
 
 ```
 mkdir testin
-ls -1 data | grep -P "_S20_|_S27_|_S29_" | xargs -I{} cp data/{} testin
+ls -1 ../data | grep -P "_S20_|_S27_|_S29_" | xargs -I{} cp data/{} testin
 # ls -1 ../data | grep -P "_S27_|_S1_|_S9_" | xargs -I{} cp data/{} raw
 ```
 
-ls -1 ../data | grep -P "_S27_|_S1_|_S9_" | xargs -I{} cp data/{} raw
+
 
 ```
 tree ../targseq

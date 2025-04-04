@@ -19,6 +19,12 @@ bsub -q sara -Is -n 8 -R "rusage[mem=128]" -W 8:00 bash
 conda activate /usr/local/usrapps/maize/user/secapr_env
 ```
 
+#### Execute code from your user folder
+```
+cd user
+mkdir testout
+```
+
 #### Directory structure
 ```
 cd /rsstu/users/r/rrellan/BZea/targseq/
@@ -46,7 +52,7 @@ ls -1 data | grep -P "_S20_|_S27_|_S29_" | xargs -I{} cp data/{} testin
 # ls -1 ../data | grep -P "_S27_|_S1_|_S9_" | xargs -I{} cp data/{} raw
 ```
 
-
+ls -1 ../data | grep -P "_S27_|_S1_|_S9_" | xargs -I{} cp data/{} raw
 
 ```
 tree ../targseq
@@ -62,11 +68,7 @@ tree ../targseq
 ```
 
 
-#### Execute code from your user folder
-```
-cd user
-mkdir testout
-```
+
 
 ## Tutorial
 We are following the [secapr tutorial](https://htmlpreview.github.io/?https://github.com/AntonelliLab/seqcap_processor/blob/master/docs/documentation/tutorial.html)

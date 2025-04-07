@@ -12,16 +12,8 @@ See `secapr_installation.md`
 ```
 ssh user@login.hpc.ncsu.edu
 ```
-
-#### Request an interactive session
-```
-bsub -q sara -Is -n 8 -R "rusage[mem=128]" -W 8:00 bash
-```
-
-#### Activate `secapr` conda environment
-```
-conda activate /usr/local/usrapps/maize/user/secapr_env
-```
+As we are sending jobs in batch through LSF `bsub` to be run in the cluster.
+You should execute this pipeline from the login node.
 
 #### Execute code from your user folder in targseq
 ```

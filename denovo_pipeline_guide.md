@@ -37,10 +37,18 @@ Before starting, ensure you have:
 The sample annotation file should be tab-separated with at least two columns: Sample ID and filename. Example:
 
 ```
-Sample1	Sample1_S1_L001_R1_001.fastq.gz
-Sample1	Sample1_S1_L001_R2_001.fastq.gz
-Sample2	Sample2_S2_L001_R1_001.fastq.gz
-Sample2	Sample2_S2_L001_R2_001.fastq.gz
+mkdir raw
+ls -1 ../data | grep -P "_S20_|_S27_|_S29_" | xargs -I{} cp ../data/{} raw
+ls -1 raw/ |    perl -pe 's/(^.*(S\d+))_L001/$2\t$1\_L001/'| sort -n -k1.2 > sample_annotation.tab
+```
+
+```
+S20	Zx0550_P4_P3_P5311_S20_L001_R1_001.fastq.gz
+S20	Zx0550_P4_P3_P5311_S20_L001_R2_001.fastq.gz
+S27	Zx0540_P3_P5_P1111_S27_L001_R1_001.fastq.gz
+S27	Zx0540_P3_P5_P1111_S27_L001_R2_001.fastq.gz
+S29	Zx0580_P2_P5_P2411_S29_L001_R1_001.fastq.gz
+S29	Zx0580_P2_P5_P2411_S29_L001_R2_001.fastq.gz
 ```
 
 ## Directory Structure

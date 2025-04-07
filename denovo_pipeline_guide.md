@@ -1,0 +1,518 @@
+# Maize Sequencing and Assembly Pipeline Tutorial
+
+This tutorial explains a bioinformatics pipeline designed for processing Illumina sequencing data, performing de novo assembly, identifying relevant sequences through BLAST searches, and creating multiple sequence alignments. The pipeline uses LSF (Load Sharing Facility) for job management in a high-performance computing environment.
+
+## Overview of the Pipeline
+
+The pipeline consists of four main scripts that run sequentially:
+
+1. **q_clean_reads.sh**: Cleans raw Illumina sequencing reads using fastp
+2. **q_assemble_reads.sh**: Performs de novo assembly of the cleaned reads using SPAdes
+3. **find_target_contigs.sh**: Conducts BLAST searches to identify sequences of interest
+4. **q_align_sequences.sh**: Creates multiple sequence alignments using MAFFT
+
+Each script builds upon the output of the previous script, and they should be executed in order.
+
+```bash
+chmod +x q_assemble_reads.sh
+./q_clean_reads.sh
+./q_assemble_reads.sh
+./find_target_contigs.sh
+./q_align_sequences.sh
+```
+
+## Prerequisites
+
+Before starting, ensure you have:
+
+- A conda environment with the necessary tools installed (secapr_env in this example)
+- Raw Illumina sequencing data (paired-end reads in fastq.gz format)
+- A reference sequences file (reference_sequences.fasta)
+- A sample annotation file (sample_annotation.tab) containing sample IDs and filenames
+- Access to an LSF job scheduling system
+
+The sample annotation file should be tab-separated with at least two columns: Sample ID and filename. Example:
+
+```
+Sample1	Sample1_S1_L001_R1_001.fastq.gz
+Sample1	Sample1_S1_L001_R2_001.fastq.gz
+Sample2	Sample2_S2_L001_R1_001.fastq.gz
+Sample2	Sample2_S2_L001_R2_001.fastq.gz
+```
+
+## Directory Structure
+
+The pipeline uses the following directory structure:
+
+```
+├── raw/                   # Raw sequencing data
+├── clean/                 # Cleaned reads
+├── assemblies/            # De novo assemblies
+├── blast_results/         # BLAST search results
+├── alignments/            # Multiple sequence alignments
+├── logs/                  # Log files
+├── reference_sequences.fasta  # Reference sequences
+├── sample_annotation.tab      # Sample annotations
+└── Scripts
+    ├── q_clean_reads.sh
+    ├── q_assemble_reads.sh
+    ├── find_target_contigs.sh
+    └── q_align_sequences.sh
+```
+
+## Step 1: Read Cleaning (q_clean_reads.sh)
+
+This script cleans raw Illumina reads using fastp, which performs quality filtering, adapter trimming, and read deduplication.
+
+### Script Explanation
+
+```bash
+#!/bin/bash
+source ~/.bashrc
+conda activate /share/maize/frodrig4/conda/env/secapr_env
+
+# Define directories and input files
+RAW_DIR="raw"
+CLEAN_DIR="clean"
+ASSEMBLY_DIR="assemblies"
+BLAST_DIR="blast_results"
+REF_FILE="reference_sequences.fasta"
+FINAL_HITS="final_combined_hits.fasta"
+SAMPLE_FILE="sample_annotation.tab"
+
+# Create output directories if they don't exist
+mkdir -p ${CLEAN_DIR}
+mkdir -p ${ASSEMBLY_DIR}
+mkdir -p ${BLAST_DIR}
+mkdir -p logs
+
+# Check if sample file exists
+if [ ! -f "${SAMPLE_FILE}" ]; then
+    echo "Error: Sample annotation file ${SAMPLE_FILE} not found!"
+    exit 1
+fi
+
+# Step 1: Clean reads with fastp
+echo "Submitting read cleaning jobs..."
+while IFS=$'\t' read -r SAMPLE_ID FILENAME; do
+    # Extract base filename (without _R1_001.fastq.gz or _R2_001.fastq.gz)
+    BASE_FILENAME=$(echo ${FILENAME} | sed 's/_R[12]_001\.fastq\.gz$//')
+
+    # Define input and output files
+    R1="${RAW_DIR}/${BASE_FILENAME}_R1_001.fastq.gz"
+    R2="${RAW_DIR}/${BASE_FILENAME}_R2_001.fastq.gz"
+    OUT_R1="${CLEAN_DIR}/${BASE_FILENAME}_R1_001.clean.fastq.gz"
+    OUT_R2="${CLEAN_DIR}/${BASE_FILENAME}_R2_001.clean.fastq.gz"
+
+    # Check if both files exist before submitting job
+    if [ -f "${R1}" ] && [ -f "${R2}" ]; then
+        # Submit fastp job
+        bsub -q "sara" \
+             -J "fastp_${SAMPLE_ID}" \
+             -o "logs/fastp_${SAMPLE_ID}.out" \
+             -e "logs/fastp_${SAMPLE_ID}.err" \
+             -n 4 -R "rusage[mem=4G]" \
+             -W 60 \
+             "fastp -w 4 -i ${R1} -I ${R2} -o ${OUT_R1} -O ${OUT_R2} \
+                    --dedup \
+                    --qualified_quality_phred 30 \
+                    --length_required 50 \
+                    --html ${CLEAN_DIR}/${SAMPLE_ID}_fastp.html \
+                    --json ${CLEAN_DIR}/${SAMPLE_ID}_fastp.json"
+
+        echo "Submitted fastp job for ${SAMPLE_ID} (${BASE_FILENAME})"
+    else
+        echo "Warning: Input files for ${SAMPLE_ID} not found. Skipping."
+    fi
+# Only process lines that have _R1_ in them to avoid duplicates (since file contains both R1 and R2)
+done < <(grep "_R1_" ${SAMPLE_FILE})
+```
+
+### Running the Script
+
+1. Make sure your raw sequencing data is in the `raw/` directory
+2. Ensure your sample annotation file `sample_annotation.tab` is correctly formatted
+3. Make the script executable and run it:
+
+```bash
+chmod +x q_clean_reads.sh
+./q_clean_reads.sh
+```
+
+### What Happens?
+
+- The script reads the sample annotation file and processes each sample
+- For each sample, it submits an LSF job that runs fastp with these parameters:
+  - Removes duplicate reads (`--dedup`)
+  - Requires base quality of 30 or higher (`--qualified_quality_phred 30`)
+  - Requires reads to be at least 50 bp long (`--length_required 50`)
+  - Uses 4 threads (`-w 4`)
+- Output includes cleaned fastq files and HTML/JSON reports
+- Jobs are given 60 minutes to complete (`-W 60`)
+- Each job uses 4 CPUs and 4GB memory
+
+### Key Parameters
+
+- `-q "sara"`: Specifies the LSF queue to use
+- `-J "fastp_${SAMPLE_ID}"`: Names the job with the sample ID for tracking
+- `-n 4`: Requests 4 CPUs
+- `-R "rusage[mem=4G]"`: Requests 4GB of memory
+- `-W 60`: Sets time limit to 60 minutes
+
+## Step 2: De Novo Assembly (q_assemble_reads.sh)
+
+This script performs de novo assembly of the cleaned reads using SPAdes.
+
+### Script Explanation
+
+```bash
+#!/bin/bash
+source ~/.bashrc
+conda activate /share/maize/frodrig4/conda/env/secapr_env
+
+# Define directories and input files
+RAW_DIR="raw"
+CLEAN_DIR="clean"
+ASSEMBLY_DIR="assemblies"
+BLAST_DIR="blast_results"
+REF_FILE="reference_sequences.fasta"  
+FINAL_HITS="final_combined_hits.fasta"
+SAMPLE_FILE="sample_annotation.tab"  
+
+# Create output directories if they don't exist
+mkdir -p ${CLEAN_DIR}
+mkdir -p ${ASSEMBLY_DIR}
+mkdir -p ${BLAST_DIR}
+mkdir -p logs
+
+# Check if sample file exists
+if [ ! -f "${SAMPLE_FILE}" ]; then
+    echo "Error: Sample annotation file ${SAMPLE_FILE} not found!"
+    exit 1
+fi
+
+# Step 2: De novo assembly with SPAdes
+echo "Submitting SPAdes assembly jobs..."
+while IFS=$'\t' read -r SAMPLE_ID FILENAME; do
+    # Extract base filename (without _R1_001.fastq.gz)
+    BASE_FILENAME=$(echo ${FILENAME} | sed 's/_R1_001\.fastq\.gz$//')
+
+    # Define input and output files/directories
+    CLEAN_R1="${CLEAN_DIR}/${BASE_FILENAME}_R1_001.clean.fastq.gz"
+    CLEAN_R2="${CLEAN_DIR}/${BASE_FILENAME}_R2_001.clean.fastq.gz"
+    OUT_DIR="${ASSEMBLY_DIR}/${SAMPLE_ID}"
+
+    # Check if cleaned files exist before submitting job
+    if [ -f "${CLEAN_R1}" ] && [ -f "${CLEAN_R2}" ]; then
+        # Submit SPAdes job with dependency on fastp completion
+        bsub -q "sara" \
+             -J "spades_${SAMPLE_ID}" \
+             -o "logs/spades_${SAMPLE_ID}.out" \
+             -e "logs/spades_${SAMPLE_ID}.err" \
+             -n 8 -R "rusage[mem=20G]" \
+             -W 48:00 \
+             "spades.py --isolate -t 8 -m 20 \
+                      --only-assembler \
+                      --cov-cutoff auto \
+                      -1 ${CLEAN_R1} \
+                      -2 ${CLEAN_R2} \
+                      -o ${OUT_DIR}"
+
+        echo "Submitted SPAdes job for ${SAMPLE_ID}"
+    else
+        echo "Warning: Cleaned files for ${SAMPLE_ID} not found. Skipping assembly."
+    fi
+done < <(grep "_R1_" ${SAMPLE_FILE})
+```
+
+### Running the Script
+
+Ensure Step 1 has completed, then run:
+
+```bash
+chmod +x q_assemble_reads.sh
+./q_assemble_reads.sh
+```
+
+### What Happens?
+
+- The script reads the sample file and processes each sample
+- It checks for the existence of cleaned read files from Step 1
+- For each sample, it submits an LSF job that runs SPAdes with these parameters:
+  - Uses the `--isolate` mode (optimized for single isolate assemblies)
+  - Sets coverage cutoff to automatic (`--cov-cutoff auto`)
+  - Uses 8 threads and 20GB memory
+  - Skips read error correction (`--only-assembler`)
+- The assembly output is stored in `assemblies/SAMPLE_ID/`
+- The main output file of interest is `scaffolds.fasta`
+
+### Key Parameters
+
+- `-n 8 -R "rusage[mem=20G]"`: Requests 8 CPUs and 20GB memory
+- `-W 48:00`: Sets a 48-hour time limit
+- `--isolate`: Optimizes SPAdes for bacterial/fungal isolate assemblies
+- `--only-assembler`: Skips read error correction, which may have already been done in cleaning
+
+## Step 3: BLAST Search (find_target_contigs.sh)
+
+This script uses BLAST to identify sequences of interest by comparing the assemblies to reference sequences.
+
+### Script Explanation
+
+```bash
+#!/bin/bash
+source ~/.bashrc
+conda activate /share/maize/frodrig4/conda/env/secapr_env
+
+# Define directories and input files
+RAW_DIR="raw"
+CLEAN_DIR="clean"
+ASSEMBLY_DIR="assemblies"
+BLAST_DIR="blast_results"
+REF_FILE="reference_sequences.fasta"  
+FINAL_HITS="final_combined_hits.fasta"
+SAMPLE_FILE="sample_annotation.tab"  
+
+# Create output directories if they don't exist
+mkdir -p ${CLEAN_DIR}
+mkdir -p ${ASSEMBLY_DIR}
+mkdir -p ${BLAST_DIR}
+mkdir -p logs
+
+echo "Submitting BLAST jobs..."
+while IFS=$'\t' read -r SAMPLE_ID FILENAME; do
+    ASSEMBLY="${ASSEMBLY_DIR}/${SAMPLE_ID}/scaffolds.fasta"
+    OUT_FILE="${BLAST_DIR}/${SAMPLE_ID}_blast_results.txt"
+    BEST_HITS="${BLAST_DIR}/${SAMPLE_ID}_best_hits.fasta"
+    
+    # Submit BLAST job with dependency on SPAdes completion
+    bsub -J "blast_${SAMPLE_ID}" \
+         -o "logs/blast_${SAMPLE_ID}.out" \
+         -e "logs/blast_${SAMPLE_ID}.err" \
+         -n 4 -R "rusage[mem=8G]" \
+         "# Wait until assembly file exists
+          while [ ! -f ${ASSEMBLY} ]; do
+              sleep 30
+          done
+          
+          # Create BLAST database
+          makeblastdb -in ${ASSEMBLY} -dbtype nucl -out ${ASSEMBLY_DIR}/${SAMPLE_ID}/db  -parse_seqids && \
+          
+          # Run BLAST and keep only best hit for each query
+          blastn -task megablast \
+                -query ${REF_FILE} -db ${ASSEMBLY_DIR}/${SAMPLE_ID}/db \
+                -outfmt 6 \
+                -num_alignments 1 -max_hsps 1 \
+                -num_threads 4 > ${OUT_FILE} && \
+          
+          # Extract sequences for best hits
+          cut -f1,2 ${OUT_FILE} | \
+          while read QUERY SUBJECT; do \
+              echo -e \">\${QUERY}_${SAMPLE_ID}\\n\$(blastdbcmd -db ${ASSEMBLY_DIR}/${SAMPLE_ID}/db -entry \${SUBJECT} -outfmt '%s')\"; \
+          done > ${BEST_HITS}"
+    
+    echo "Submitted BLAST job for ${SAMPLE_ID}"
+done < <(grep "_R1_" ${SAMPLE_FILE})
+
+
+# Group the sequences by gene
+awk '{if(NR==1) {print $0} else {if($0 ~ /^>/) {print "\n"$0} else {printf "%s",$0}}}' ../../reference_sequences.fasta  > reference_sequences.fasta
+awk '{if(NR==1) {print $0} else {if($0 ~ /^>/) {print "\n"$0} else {printf "%s",$0}}}' ../../TIL18_reference_sequences.fasta  > TIL18_reference_sequences.fasta
+cat reference_sequences.fasta TIL18_reference_sequences.fasta  blast_results/*_best_hits.fasta | perl -pe 's/>/\n>/g' > blast_results/all_hits.fas 
+ls 
+cut -f1 blast_results/*_blast_results.txt| sort |uniq | while IFS=$'\t' read -r GENE; do grep -A 1 "${GENE}" blast_results/all_hits.fas | grep -v -- "^--$" > blast_results/${GENE}.fas; done
+```
+
+### Running the Script
+
+Ensure Step 2 has completed, then run:
+
+```bash
+chmod +x find_target_contigs.sh
+./find_target_contigs.sh
+```
+
+### What Happens?
+
+The script has two main parts:
+
+1. **BLAST jobs for each sample:**
+   - Creates a BLAST database from each sample's assembly
+   - Runs BLAST to find the best match between reference sequences and the assembly
+   - Extracts the matching sequences from the assembly
+   - Outputs results to `blast_results/SAMPLE_ID_best_hits.fasta`
+
+2. **Sequence organization by gene:**
+   - Reformats reference sequences
+   - Combines all hits and reference sequences
+   - Organizes sequences by gene, creating separate files for each gene in `blast_results/GENE.fas`
+
+### Key BLAST Parameters
+
+- `-task megablast`: Uses megablast algorithm for highly similar sequences
+- `-outfmt 6`: Outputs in tabular format
+- `-num_alignments 1 -max_hsps 1`: Returns only the single best hit for each query
+
+## Step 4: Multiple Sequence Alignment (q_align_sequences.sh)
+
+This script creates multiple sequence alignments for each gene using MAFFT.
+
+### Script Explanation
+
+```bash
+#!/bin/bash
+source ~/.bashrc
+conda activate /share/maize/frodrig4/conda/env/secapr_env
+
+# Define directories and input files
+RAW_DIR="raw"
+CLEAN_DIR="clean"
+ASSEMBLY_DIR="assemblies"
+BLAST_DIR="blast_results"
+ALIGNMENT_DIR="alignments"  # New directory for alignments
+REF_FILE="reference_sequences.fasta"  
+FINAL_HITS="final_combined_hits.fasta"
+SAMPLE_FILE="sample_annotation.tab"  
+
+# Create output directories if they don't exist
+mkdir -p ${CLEAN_DIR}
+mkdir -p ${ASSEMBLY_DIR}
+mkdir -p ${BLAST_DIR}
+mkdir -p logs
+
+
+# Add MAFFT alignment step by gene group
+echo "Submitting MAFFT alignment jobs..."
+cut -f1 ${BLAST_DIR}/*_blast_results.txt | sort | uniq | while IFS=$'\t' read -r GENE; do
+    INPUT_FILE="${BLAST_DIR}/${GENE}.fas"
+    OUTPUT_FILE="${ALIGNMENT_DIR}/${GENE}_aligned.fasta"
+    
+    # Create directory for the gene if it doesn't exist
+    mkdir -p "${ALIGNMENT_DIR}/$(dirname ${GENE})"
+    
+    # Submit MAFFT job
+    bsub -J "mafft_${GENE}" \
+         -o "logs/mafft_${GENE}.out" \
+         -e "logs/mafft_${GENE}.err" \
+         -n 2 -R "rusage[mem=4G]" \
+         "mafft --reorder --adjustdirection --nuc --auto  ${INPUT_FILE} | sed 's/^>_R_/>/' > ${OUTPUT_FILE}"
+    echo "Submitted MAFFT alignment job for ${GENE}"
+done
+```
+
+### Running the Script
+
+Ensure Step 3 has completed, then run:
+
+```bash
+chmod +x q_align_sequences.sh
+./q_align_sequences.sh
+```
+
+### What Happens?
+
+- The script identifies all unique genes from the BLAST results
+- For each gene, it submits a job to create a multiple sequence alignment using MAFFT
+- The alignments are saved in the `alignments/` directory
+- Each alignment contains all samples' sequences for a specific gene
+
+### MAFFT Parameters
+
+- `--reorder`: Outputs sequences in alignment order rather than input order
+- `--adjustdirection`: Adjusts sequence direction to minimize mismatches
+- `--nuc`: Specifies nucleotide sequences
+- `--auto`: Automatically selects appropriate alignment strategy based on data
+
+## Analysis and Visualization
+
+After running the pipeline, you'll have:
+
+1. Cleaned reads in `clean/`
+2. De novo assemblies in `assemblies/`
+3. BLAST results in `blast_results/`
+4. Multiple sequence alignments in `alignments/`
+
+These alignments can be used for:
+- Phylogenetic analysis
+- SNP identification
+- Evolutionary studies
+- Primer design
+
+You can visualize the alignments using tools like:
+- Jalview
+- AliView
+- MEGA
+- R packages like `ape` or `Biostrings`
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Missing Dependencies**
+   - Ensure your conda environment contains all necessary tools
+   - Check for error messages about missing commands
+
+2. **Job Failures**
+   - Check the log files in the `logs/` directory
+   - Look for resource constraints (time/memory)
+
+3. **No BLAST Hits**
+   - Verify that your reference sequences are appropriate for your samples
+   - Check if assembly quality is sufficient
+
+4. **LSF-Specific Issues**
+   - If jobs are pending for a long time, check queue status with `bjobs`
+   - Adjust resource requests if needed
+
+### Log Files
+
+Always check log files for errors:
+```
+cat logs/fastp_SAMPLE_ID.err
+cat logs/spades_SAMPLE_ID.err
+cat logs/blast_SAMPLE_ID.err
+cat logs/mafft_GENE.err
+```
+
+## Customization Options
+
+### Adjusting Resource Requests
+
+If you need to adjust computing resources:
+
+1. For read cleaning (Step 1):
+   ```bash
+   -n 4 -R "rusage[mem=4G]" -W 60
+   ```
+
+2. For assembly (Step 2):
+   ```bash
+   -n 8 -R "rusage[mem=20G]" -W 48:00
+   ```
+
+3. For BLAST (Step 3):
+   ```bash
+   -n 4 -R "rusage[mem=8G]"
+   ```
+
+4. For alignment (Step 4):
+   ```bash
+   -n 2 -R "rusage[mem=4G]"
+   ```
+
+### Quality Parameters
+
+To adjust quality filtering parameters, modify the fastp command:
+```bash
+fastp -w 4 -i ${R1} -I ${R2} -o ${OUT_R1} -O ${OUT_R2} \
+      --dedup \
+      --qualified_quality_phred 30 \  # Adjust quality threshold
+      --length_required 50 \          # Adjust minimum length
+      ...
+```
+
+## Conclusion
+
+This pipeline provides a streamlined approach for processing Illumina sequencing data, with each step building on the previous one. The modular design allows for troubleshooting at each stage and makes it easy to customize for different projects.
+
+For maize genetics studies, this pipeline can help identify gene variants across different samples, potentially revealing important genetic differences related to traits of interest.

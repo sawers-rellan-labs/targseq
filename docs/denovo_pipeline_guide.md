@@ -12,8 +12,8 @@ See `secapr_installation.md`
 ```
 ssh user@login.hpc.ncsu.edu
 ```
-As we are sending jobs in batch through LSF `bsub` to be run in the cluster.
-You should execute this pipeline from the login node.
+As we are sending jobs in batch through LSF `bsub` to be run in the cluster,
+you should execute this pipeline from the login node.
 
 #### Execute code from your user folder in targseq
 ```
@@ -41,14 +41,14 @@ The preffix `q_` standas for using that script for sending queues.
 These batch scripts are wrappers for the job submission command `bsub`.
 
 ```bash
-chmod +x q_*.sh
-./q_clean_reads.sh
+chmod +x scripts/q_*.sh
+./batch_scripts/q_clean_reads.sh
 # wait for the jobs to run then do:
-./q_assemble_reads.sh
+./batch_scripts/q_assemble_reads.sh
 # wait for the jobs to run then do:
-./q_find_target_contigs.sh
+./batch_scripts/q_find_target_contigs.sh
 # wait for the jobs to run then do:
-./q_align_sequences.sh
+./batch_scripts/q_align_sequences.sh
 ```
 
 ## Prerequisites
@@ -90,7 +90,7 @@ The pipeline uses the following directory structure:
 ├── logs/                  # Log files
 ├── reference_sequences.fasta  # Reference sequences
 ├── sample_annotation.tab      # Sample annotations
-└── Scripts
+└── batch_scripts
     ├── q_clean_reads.sh
     ├── q_assemble_reads.sh
     ├── q_find_target_contigs.sh

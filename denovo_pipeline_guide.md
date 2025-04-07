@@ -16,8 +16,11 @@ Each script builds upon the output of the previous script, and they should be ex
 ```bash
 chmod +x q_assemble_reads.sh
 ./q_clean_reads.sh
+# wait for the jobs to run then do:
 ./q_assemble_reads.sh
+# wait for the jobs to run then do:
 ./find_target_contigs.sh
+# wait for the jobs to run then do:
 ./q_align_sequences.sh
 ```
 

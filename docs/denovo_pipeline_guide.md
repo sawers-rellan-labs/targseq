@@ -41,6 +41,7 @@ The prefix `q_` stands for using that script for sending queues.
 These batch scripts are wrappers for the job submission command `bsub`.
 
 ```bash
+# Add executable permission to shell scripts
 chmod +x batch_scripts/q_*.sh
 ./batch_scripts/q_clean_reads.sh
 # wait for the jobs to run then do:

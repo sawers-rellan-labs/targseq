@@ -343,7 +343,8 @@ while IFS=$'\t' read -r SAMPLE_ID FILENAME; do
                 -num_threads 4 > ${OUT_FILE} && \
           
           # Extract sequences for best hits
-          cut -f1,2 ${OUT_FILE} | \
+          # remove B73 from file name
+          cut -f1,2 ${OUT_FILE} | sed s'/_B73//' | \
           while read QUERY SUBJECT; do \
               echo -e \">\${QUERY}_${SAMPLE_ID}\\n\$(blastdbcmd -db ${ASSEMBLY_DIR}/${SAMPLE_ID}/db -entry \${SUBJECT} -outfmt '%s')\"; \
           done > ${BEST_HITS}"

@@ -173,7 +173,7 @@ done < <(grep "_R1_" ${SAMPLE_FILE})
 3. Make the script executable and run it:
 
 ```bash
-chmod +x q_clean_reads.sh
+chmod +x ./batch_scripts/q_clean_reads.sh
 ./batch_scripts/clean_reads.sh
 ```
 
@@ -268,7 +268,7 @@ done < <(grep "_R1_" ${SAMPLE_FILE})
 Ensure Step 1 has completed, then run:
 
 ```bash
-chmod +x q_assemble_reads.sh
+chmod +x ./batch_scripts/q_assemble_reads.sh
 ./batch_scripts/assemble_reads.sh
 ```
 
@@ -367,7 +367,7 @@ cut -f1 blast_results/*_blast_results.txt| sort |uniq | while IFS=$'\t' read -r 
 Ensure Step 2 has completed, then run:
 
 ```bash
-chmod +x q_find_target_contigs.sh
+chmod +x ./batch_scripts/q_find_target_contigs.sh
 ./batch_scripts/find_target_contigs.sh
 ```
 
@@ -444,7 +444,7 @@ done
 Ensure Step 3 has completed, then run:
 
 ```bash
-chmod +x q_align_sequences.sh
+chmod +x ./batch_scripts/q_align_sequences.sh
 ./batch_scripts/align_sequences.sh
 ```
 

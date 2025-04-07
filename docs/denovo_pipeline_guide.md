@@ -174,7 +174,7 @@ done < <(grep "_R1_" ${SAMPLE_FILE})
 
 ```bash
 chmod +x ./batch_scripts/q_clean_reads.sh
-./batch_scripts/clean_reads.sh
+./batch_scripts/q_clean_reads.sh
 ```
 
 ### What Happens?
@@ -269,7 +269,7 @@ Ensure Step 1 has completed, then run:
 
 ```bash
 chmod +x ./batch_scripts/q_assemble_reads.sh
-./batch_scripts/assemble_reads.sh
+./batch_scripts/q_assemble_reads.sh
 ```
 
 ### What Happens?
@@ -368,7 +368,7 @@ Ensure Step 2 has completed, then run:
 
 ```bash
 chmod +x ./batch_scripts/q_find_target_contigs.sh
-./batch_scripts/find_target_contigs.sh
+./batch_scripts/q_find_target_contigs.sh
 ```
 
 ### What Happens?
@@ -445,7 +445,7 @@ Ensure Step 3 has completed, then run:
 
 ```bash
 chmod +x ./batch_scripts/q_align_sequences.sh
-./batch_scripts/align_sequences.sh
+./batch_scripts/q_align_sequences.sh
 ```
 
 ### What Happens?

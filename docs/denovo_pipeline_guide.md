@@ -1,4 +1,4 @@
-# Step by step guide for *de novo* assembly of target sequncing data
+# Step by step guide for *de novo* assembly of target sequencing data
 
 This guide explains a bioinformatics pipeline designed for processing Illumina sequencing data, performing de novo assembly, identifying relevant sequences through BLAST searches, and creating multiple sequence alignments. The pipeline uses LSF (Load Sharing Facility) for job management in a high-performance computing environment.
 

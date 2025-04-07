@@ -124,3 +124,27 @@ https://github.com/AntonelliLab/seqcap_processor/issues/41
 
 
 ### Reference assembly
+
+```
+secapr reference_assembly --reads pipeline_exercise/cleaned_trimmed_reads --reference_type alignment-consensus --reference pipeline_exercise/alignments/contig_alignments --output pipeline_exercise/mapped_reads --min_coverage 4
+```
+
+```
+secapr locus_selection --input pipeline_exercise/mapped_reads --output pipeline_exercise/selected_loci --n 100
+```
+
+```
+secapr align_sequences --sequences pipeline_exercise/mapped_reads/joined_unphased_fastas.fasta --outdir pipeline_exercise/alignments/bam_consensus_alignments --no_trim
+```
+
+```
+secapr phase_alleles --input pipeline_exercise/selected_loci --output pipeline_exercise/allele_sequences_selected_loci --min_coverage 3
+```
+
+```
+secapr align_sequences --sequences pipeline_exercise/allele_sequences_selected_loci/joined_allele_fastas.fasta --outdir pipeline_exercise/alignments/selected_loci_allele_alignments --no_trim
+```
+
+
+
+

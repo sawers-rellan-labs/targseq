@@ -41,7 +41,7 @@ The preffix `q_` standas for using that script for sending queues.
 These batch scripts are wrappers for the job submission command `bsub`.
 
 ```bash
-chmod +x scripts/q_*.sh
+chmod +x batch_scripts/q_*.sh
 ./batch_scripts/q_clean_reads.sh
 # wait for the jobs to run then do:
 ./batch_scripts/q_assemble_reads.sh

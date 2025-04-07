@@ -1,6 +1,6 @@
-# Maize Sequencing and Assembly Pipeline Tutorial
+# Step by step guide for *de novo* assembly of target sequncing data
 
-This tutorial explains a bioinformatics pipeline designed for processing Illumina sequencing data, performing de novo assembly, identifying relevant sequences through BLAST searches, and creating multiple sequence alignments. The pipeline uses LSF (Load Sharing Facility) for job management in a high-performance computing environment.
+This guide explains a bioinformatics pipeline designed for processing Illumina sequencing data, performing de novo assembly, identifying relevant sequences through BLAST searches, and creating multiple sequence alignments. The pipeline uses LSF (Load Sharing Facility) for job management in a high-performance computing environment.
 
 ## Set up
 We installed `secapr` from:
@@ -41,18 +41,20 @@ The pipeline consists of four main scripts that run sequentially:
 
 1. **q_clean_reads.sh**: Cleans raw Illumina sequencing reads using fastp
 2. **q_assemble_reads.sh**: Performs de novo assembly of the cleaned reads using SPAdes
-3. **find_target_contigs.sh**: Conducts BLAST searches to identify sequences of interest
+3. **q_find_target_contigs.sh**: Conducts BLAST searches to identify sequences of interest
 4. **q_align_sequences.sh**: Creates multiple sequence alignments using MAFFT
 
 Each script builds upon the output of the previous script, and they should be executed in order.
+The preffix `q_` standas for using that script for sending queues. 
+These batch scripts are wrappers for the job submission command `bsub`.
 
 ```bash
-chmod +x q_assemble_reads.sh
+chmod +x q_*.sh
 ./q_clean_reads.sh
 # wait for the jobs to run then do:
 ./q_assemble_reads.sh
 # wait for the jobs to run then do:
-./find_target_contigs.sh
+./q_find_target_contigs.sh
 # wait for the jobs to run then do:
 ./q_align_sequences.sh
 ```
@@ -99,7 +101,7 @@ The pipeline uses the following directory structure:
 └── Scripts
     ├── q_clean_reads.sh
     ├── q_assemble_reads.sh
-    ├── find_target_contigs.sh
+    ├── q_find_target_contigs.sh
     └── q_align_sequences.sh
 ```
 
@@ -296,7 +298,7 @@ chmod +x q_assemble_reads.sh
 - `--isolate`: Optimizes SPAdes for bacterial/fungal isolate assemblies
 - `--only-assembler`: Skips read error correction, which may have already been done in cleaning
 
-## Step 3: BLAST Search (find_target_contigs.sh)
+## Step 3: BLAST Search (q_find_target_contigs.sh)
 
 This script uses BLAST to identify sequences of interest by comparing the assemblies to reference sequences.
 
@@ -371,8 +373,8 @@ cut -f1 blast_results/*_blast_results.txt| sort |uniq | while IFS=$'\t' read -r 
 Ensure Step 2 has completed, then run:
 
 ```bash
-chmod +x find_target_contigs.sh
-./find_target_contigs.sh
+chmod +x q_find_target_contigs.sh
+./q_find_target_contigs.sh
 ```
 
 ### What Happens?

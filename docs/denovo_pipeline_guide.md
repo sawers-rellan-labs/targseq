@@ -37,7 +37,7 @@ The pipeline consists of four main scripts that run sequentially:
 4. **q_align_sequences.sh**: Creates multiple sequence alignments using MAFFT
 
 Each script builds upon the output of the previous script, and they should be executed in order.
-The preffix `q_` standas for using that script for sending queues. 
+The prefix `q_` stands for using that script for sending queues. 
 These batch scripts are wrappers for the job submission command `bsub`.
 
 ```bash

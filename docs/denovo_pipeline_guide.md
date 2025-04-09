@@ -62,7 +62,9 @@ Before starting, ensure you have:
 - A sample annotation file (sample_annotation.tab) containing sample IDs and filenames
 - Access to an LSF job scheduling system
 
-The reference sequences `reference_sequences.fasta` file comes from the B73 genome annotation `Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gff3`.
+### Reference sequence files
+
+The reference sequences file  `reference_sequences.fasta` comes from the B73 genome annotation `Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gff3`
 found in https://download.maizegdb.org/Zm-B73-REFERENCE-NAM-5.0/.
 
 The sequences include the canonical transcript sequence plus 2Kb upstream the TSS as described by the following coordinates:
@@ -88,11 +90,13 @@ The sequences include the canonical transcript sequence plus 2Kb upstream the TS
 6 64571577-64575876 plus
 9 6311753-6315844 minus
 10 126885234-126893653 minus
-
 ```
+
 Similarly the sequences from TIL18, an inbred line of *Zea mays spp. mexicana*, 
-are stored in  `TIL18_reference_sequences.fasta` and were extracted from  `Zx-TIL18-REFERENCE-PanAnd-1.0_Zx00002ab.1.gff3.gz`
+are stored in  `TIL18_reference_sequences.fasta` and were extracted from  `Zx-TIL18-REFERENCE-PanAnd-1.0_Zx00002ab.1.gff3`
 in https://download.maizegdb.org/Zx-TIL18-REFERENCE-PanAnd-1.0/
+
+### Sample annotation file
 
 The sample annotation file should be tab-separated with at least two columns: Sample ID and filename. Example:
 

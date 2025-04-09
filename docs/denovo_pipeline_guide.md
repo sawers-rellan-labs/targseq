@@ -64,7 +64,7 @@ Before starting, ensure you have:
 
 ### Reference sequence files
 
-The reference sequences file  `reference_sequences.fasta` comes from the B73 genome annotation `Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gff3`
+The file  `reference_sequences.fasta` comes from the B73 genome annotation `Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gff3`
 found in https://download.maizegdb.org/Zm-B73-REFERENCE-NAM-5.0/.
 
 The sequences include the canonical transcript sequence plus 2Kb upstream the TSS as described by the following coordinates:
@@ -75,21 +75,17 @@ The sequences include the canonical transcript sequence plus 2Kb upstream the TS
 1 298566258 298567661 plus Zm00001eb062030 ipt6
 3 8497640 8499737 plus Zm00001eb121780 hpc1
 4 244043231 244045806 plus Zm00001eb206940 nrg11
-5 46523225 46536618 plus Zm00001eb224960 gpat15
 5 78778520 78781733 minus Zm00001eb231720 nlp1
 6 64573577 64575876 plus Zm00001eb268440 gdsl
 9 6311753 6313844 minus Zm00001eb372490 tcptf9
-10 126885234 126891653 minus Zm00001eb424670 aaap69
 
 # 2kb 'promoter' + gene body coordinates for blastdbcmd
 1 298564258-298567661 plus
 3 8495640-8499737 plus
 4 244041231-244045806 plus
-5 46521225-46536618 plus
 5 78778520-78783733 minus
 6 64571577-64575876 plus
 9 6311753-6315844 minus
-10 126885234-126893653 minus
 ```
 
 Similarly the sequences from TIL18, an inbred line of *Zea mays spp. mexicana*, 

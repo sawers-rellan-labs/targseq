@@ -19,7 +19,6 @@ bsub -q sara -Is -n 8 -R "rusage[mem=128]" -W 8:00 bash
 conda activate /usr/local/usrapps/maize/user/secapr_env
 ```
 
-
 #### Execute code from your user folder
 ```
 cd /rsstu/users/r/rrellan/BZea/targseq/
@@ -117,7 +116,6 @@ secapr clean_reads \
        --output clean
 ```
 
-
 it is not working see
 
 https://github.com/AntonelliLab/seqcap_processor/issues/41
@@ -126,7 +124,10 @@ https://github.com/AntonelliLab/seqcap_processor/issues/41
 ### Reference assembly
 
 ```
-secapr reference_assembly --reads pipeline_exercise/cleaned_trimmed_reads --reference_type alignment-consensus --reference pipeline_exercise/alignments/contig_alignments --output pipeline_exercise/mapped_reads --min_coverage 4
+secapr reference_assembly --reads clean \
+    --reference_type user-ref-lib \
+    --reference reference_sequences.fasta \
+    --output mapped_reads --min_coverage 4
 ```
 
 ```
@@ -144,7 +145,4 @@ secapr phase_alleles --input pipeline_exercise/selected_loci --output pipeline_e
 ```
 secapr align_sequences --sequences pipeline_exercise/allele_sequences_selected_loci/joined_allele_fastas.fasta --outdir pipeline_exercise/alignments/selected_loci_allele_alignments --no_trim
 ```
-
-
-
 

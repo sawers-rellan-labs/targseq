@@ -37,7 +37,7 @@ The pipeline consists of four main scripts that run sequentially:
 4. **q_align_sequences.sh**: Creates multiple sequence alignments using MAFFT
 
 Each script builds upon the output of the previous script, and they should be executed in order.
-The prefix `q_` stands for using that script for sending queues. 
+The prefix `q_` stands for queuing LSF jobs. 
 These batch scripts are wrappers for the job submission command `bsub`.
 
 ```bash
@@ -61,6 +61,38 @@ Before starting, ensure you have:
 - A reference sequences file (reference_sequences.fasta)
 - A sample annotation file (sample_annotation.tab) containing sample IDs and filenames
 - Access to an LSF job scheduling system
+
+The reference sequences `reference_sequences.fasta` file comes from the B73 genome annotation `Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gff3`.
+found in https://download.maizegdb.org/Zm-B73-REFERENCE-NAM-5.0/.
+
+The sequences include the canonical transcript sequence plus 2Kb upstream the TSS as described by the following coordinates:
+
+```
+# canonical transcript gene body coordinates extracted from Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gff3
+# chr start end strand gene symbol
+1 298566258 298567661 plus Zm00001eb062030 ipt6
+3 8497640 8499737 plus Zm00001eb121780 hpc1
+4 244043231 244045806 plus Zm00001eb206940 nrg11
+5 46523225 46536618 plus Zm00001eb224960 gpat15
+5 78778520 78781733 minus Zm00001eb231720 nlp1
+6 64573577 64575876 plus Zm00001eb268440 gdsl
+9 6311753 6313844 minus Zm00001eb372490 tcptf9
+10 126885234 126891653 minus Zm00001eb424670 aaap69
+
+# 2kb 'promoter' + gene body coordinates for blastdbcmd
+1 298564258-298567661 plus
+3 8495640-8499737 plus
+4 244041231-244045806 plus
+5 46521225-46536618 plus
+5 78778520-78783733 minus
+6 64571577-64575876 plus
+9 6311753-6315844 minus
+10 126885234-126893653 minus
+
+```
+Similarly the sequences from TIL18, an inbred line of *Zea mays spp. mexicana*, 
+are stored in  `TIL18_reference_sequences.fasta` and were extracted from  `Zx-TIL18-REFERENCE-PanAnd-1.0_Zx00002ab.1.gff3.gz`
+in https://download.maizegdb.org/Zx-TIL18-REFERENCE-PanAnd-1.0/
 
 The sample annotation file should be tab-separated with at least two columns: Sample ID and filename. Example:
 
@@ -91,7 +123,8 @@ The pipeline uses the following directory structure:
 ├── blast_results/         # BLAST search results
 ├── alignments/            # Multiple sequence alignments
 ├── logs/                  # Log files
-├── reference_sequences.fasta  # Reference sequences
+├── reference_sequences.fasta  # B73 reference sequences
+├── TIL18_reference_sequences.fasta # mexicana reference sequences
 ├── sample_annotation.tab      # Sample annotations
 └── batch_scripts
     ├── q_clean_reads.sh
@@ -357,8 +390,8 @@ done < <(grep "_R1_" ${SAMPLE_FILE})
 
 
 # Group the sequences by gene
-awk '{if(NR==1) {print $0} else {if($0 ~ /^>/) {print "\n"$0} else {printf "%s",$0}}}' ../../reference_sequences.fasta  > reference_sequences.fasta
-awk '{if(NR==1) {print $0} else {if($0 ~ /^>/) {print "\n"$0} else {printf "%s",$0}}}' ../../TIL18_reference_sequences.fasta  > TIL18_reference_sequences.fasta
+awk '{if(NR==1) {print $0} else {if($0 ~ /^>/) {print "\n"$0} else {printf "%s",$0}}}' ../reference_sequences.fasta  > reference_sequences.fasta
+awk '{if(NR==1) {print $0} else {if($0 ~ /^>/) {print "\n"$0} else {printf "%s",$0}}}' ../TIL18_reference_sequences.fasta  > TIL18_reference_sequences.fasta
 cat reference_sequences.fasta TIL18_reference_sequences.fasta  blast_results/*_best_hits.fasta | perl -pe 's/>/\n>/g' > blast_results/all_hits.fas 
 ls 
 cut -f1 blast_results/*_blast_results.txt| sort |uniq | while IFS=$'\t' read -r GENE; do grep -A 1 "${GENE}" blast_results/all_hits.fas | grep -v -- "^--$" > blast_results/${GENE}.fas; done

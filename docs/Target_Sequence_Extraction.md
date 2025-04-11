@@ -430,6 +430,7 @@ bash get_target_sequences.sh
 
 echo "Pipeline completed successfully!"
 echo "Output: *_target_sequences.fasta files for each taxon"
+ls -1 *_target_sequences.fasta
 ```
 
 Make the script executable and run it:

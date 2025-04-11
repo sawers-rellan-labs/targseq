@@ -58,14 +58,16 @@ Before starting, ensure you have:
 
 - A conda environment with the necessary tools installed (secapr_env in this example)
 - Raw Illumina sequencing data (paired-end reads in fastq.gz format)
-- A reference sequences file (reference_sequences.fasta)
+- A reference sequences file (B73_target_sequences.fasta)
 - A sample annotation file (sample_annotation.tab) containing sample IDs and filenames
 - Access to an LSF job scheduling system
 
 ### Reference sequence files
 
-The file  `reference_sequences.fasta` comes from the B73 genome annotation `Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gff3`
+The file  `B73_target_sequences.fasta` comes from the B73 genome annotation `Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gff3`
 found in https://download.maizegdb.org/Zm-B73-REFERENCE-NAM-5.0/.
+
+See `Target_Sequence_Extraction.md`.
 
 The sequences include the canonical transcript sequence plus 2Kb upstream the TSS as described by the following coordinates:
 
@@ -89,8 +91,10 @@ The sequences include the canonical transcript sequence plus 2Kb upstream the TS
 ```
 
 Similarly the sequences from TIL18, an inbred line of *Zea mays spp. mexicana*, 
-are stored in  `TIL18_reference_sequences.fasta` and were extracted from  `Zx-TIL18-REFERENCE-PanAnd-1.0_Zx00002ab.1.gff3`
+are stored in  `TIL18_target_sequences.fasta` and were extracted from  `Zx-TIL18-REFERENCE-PanAnd-1.0_Zx00002ab.1.gff3`
 in https://download.maizegdb.org/Zx-TIL18-REFERENCE-PanAnd-1.0/
+
+See `Target_Sequence_Extraction.md`
 
 ### Sample annotation file
 
@@ -123,8 +127,7 @@ The pipeline uses the following directory structure:
 ├── blast_results/         # BLAST search results
 ├── alignments/            # Multiple sequence alignments
 ├── logs/                  # Log files
-├── reference_sequences.fasta  # B73 reference sequences
-├── TIL18_reference_sequences.fasta # mexicana reference sequences
+├── B73_target_sequences.fasta  # B73 target sequences
 ├── sample_annotation.tab      # Sample annotations
 └── batch_scripts
     ├── q_clean_reads.sh
@@ -149,7 +152,7 @@ RAW_DIR="raw"
 CLEAN_DIR="clean"
 ASSEMBLY_DIR="assemblies"
 BLAST_DIR="blast_results"
-REF_FILE="reference_sequences.fasta"
+REF_FILE="B73_target_sequences.fasta"
 FINAL_HITS="final_combined_hits.fasta"
 SAMPLE_FILE="sample_annotation.tab"
 
@@ -248,7 +251,7 @@ RAW_DIR="raw"
 CLEAN_DIR="clean"
 ASSEMBLY_DIR="assemblies"
 BLAST_DIR="blast_results"
-REF_FILE="reference_sequences.fasta"  
+REF_FILE="B73_target_sequences.fasta"  
 FINAL_HITS="final_combined_hits.fasta"
 SAMPLE_FILE="sample_annotation.tab"  
 
@@ -342,7 +345,7 @@ RAW_DIR="raw"
 CLEAN_DIR="clean"
 ASSEMBLY_DIR="assemblies"
 BLAST_DIR="blast_results"
-REF_FILE="reference_sequences.fasta"  
+REF_FILE="B73_target_sequences.fasta"  
 FINAL_HITS="final_combined_hits.fasta"
 SAMPLE_FILE="sample_annotation.tab"  
 
@@ -390,9 +393,9 @@ done < <(grep "_R1_" ${SAMPLE_FILE})
 
 
 # Convert fasta files to one line sequence files
-awk '{if(NR==1) {print $0} else {if($0 ~ /^>/) {print "\n"$0} else {printf "%s",$0}}}' ../*_target_sequences.fasta  > reference_sequences.fasta
+awk '{if(NR==1) {print $0} else {if($0 ~ /^>/) {print "\n"$0} else {printf "%s",$0}}}' ../*_target_sequences.fasta  > target_sequences.fasta
 # Make single file for all genes, all taxa
-cat reference_sequences.fasta   blast_results/*_best_hits.fasta | perl -pe 's/>/\n>/g' > blast_results/all_hits.fas 
+cat target_sequences.fasta   blast_results/*_best_hits.fasta | perl -pe 's/>/\n>/g' > blast_results/all_hits.fas 
 # Group the sequences by gene
 cut -f1 blast_results/*_blast_results.txt| sort |uniq | while IFS=$'\t' read -r GENE; do grep -A 1 "${GENE}" blast_results/all_hits.fas | grep -v -- "^--$" > blast_results/${GENE}.fas; done
 ```
@@ -444,7 +447,7 @@ CLEAN_DIR="clean"
 ASSEMBLY_DIR="assemblies"
 BLAST_DIR="blast_results"
 ALIGNMENT_DIR="alignments"  # New directory for alignments
-REF_FILE="reference_sequences.fasta"  
+REF_FILE="B73_target_sequences.fasta"  
 FINAL_HITS="final_combined_hits.fasta"
 SAMPLE_FILE="sample_annotation.tab"  
 

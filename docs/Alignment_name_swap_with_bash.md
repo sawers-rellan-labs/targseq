@@ -101,7 +101,7 @@ mafft --reorder --adjustdirection --nuc --auto \
 awk 'FNR==NR{a[$1]=$2;next} /^>/{$0=">"a[substr($0,2)];} 1' \
   name_swap.tab hpc1_filtered_realigned.fasta > hpc1_nice_labels.fasta
 
-# Note: B73 and TIL18 reference sequences may need manual adjustment
+# Note: B73 and TIL18 reference sequences were changed manually
 ```
 
 ## Understanding the Name Swapping Command

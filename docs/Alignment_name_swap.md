@@ -20,11 +20,15 @@ S14	Chal_S14
 
 We will use this file to filter  `hpc1_aligned.fasta`
 ```
+# results of
+# grep '>' hpc1_aligned.fasta
 >hpc1_B73  Zm00001eb121780 3:8495640-8499737 dna:chromosome chromosome:Zm-B73-REFERENCE-NAM-5.0:3:1:238017767:1 REF
-tgatggtcgtgattgtttgttgtgacttgtgggaatgcagatgtgcgaagtggaacaaac
-caaaagaattgccgtctcattttctagaggaataaacttgtgtattgcagttaacagctc
-ccttgattctgaatattaatttccagaacccctgaacttgtgtgatgaaggttccaccgt
-tccagtgtaaccacagcatgctcaactctgcactaatgggtagggaacatatgcaggata
+>hpc1_S29
+>hpc1_S82
+>hpc1_S26
+>hpc1_S41
+>hpc1_S72
+>hpc1_S45
 ```
 Using the following command:
 

@@ -316,8 +316,8 @@ chmod +x extract_canonical_transcripts.sh
 ### 6. Create Coordinate Files with Flanking Regions
 ***Work in an interactive session***
 
-We will use the gff files from the previous step to build entry batch files for sequence retrieval with `blastdbcmd`.
-Each entry batch file has the necessary info to retrieve a specific subsequence from a blast database.
+We will use the gff files from the previous step to build `entry_batch` files for sequence retrieval using the tool `blastdbcmd`.
+Each `entry_batch` file has the necessary info perl line to retrieve a specific subsequence from a blast database.
 
 <blockquote>
 
@@ -329,6 +329,44 @@ Input file for batch processing. The format requires one entry per line; each li
 See https://www.ncbi.nlm.nih.gov/books/NBK279684/table/appendices.T.blastdbcmd_application_opti/
 
 Create a script called `extract_coordinates.sh`:
+
+
+### How blastdbcmd Retrieves Subsequences
+
+The `blastdbcmd` tool is a powerful utility for extracting sequences or subsequences from BLAST databases. Here's how it works:
+
+```bash
+blastdbcmd -db ref/Zm-B73-REFERENCE-NAM-5.0 -entry_batch B73_gene_targets_entry_batch.tab > B73_targets.fas.tmp
+```
+
+1. **Sequence retrieval mechanism**: 
+   - blastdbcmd uses the indices created by makeblastdb to directly access sequence data
+   - It can retrieve entire sequences or specific regions (subsequences) based on coordinates
+
+2. **The entry_batch format**:
+   - Each line contains a sequence identifier followed by optional range and strand specifications
+   - Format: `seqid range strand`
+   - Example: `chromosome01 1000-2000 plus`
+   - This means "extract bases 1000 through 2000 from chromosome01 in the forward orientation"
+
+3. **Coordinate system**:
+   - BLAST databases use 1-based inclusive coordinates (first base is position 1)
+   - The range specification is formatted as `start-end` 
+   - For genes on the minus strand, you specify `minus` to get the reverse complement
+
+4. **Handling subsequence extraction**:
+   - When we extract genes with 2kb flanking regions, blastdbcmd performs several steps:
+     - Locates the sequence (e.g., chromosome) containing the gene
+     - Extracts the specified range (gene ± 2kb)
+     - If on the minus strand, automatically reverse-complements the sequence
+     - Returns the subsequence with a header containing the original sequence ID and coordinates
+
+5. **Efficiency benefits**:
+   - Direct byte-offset addressing allows retrieval of just the relevant portion of a chromosome
+   - No need to load entire genome sequences into memory
+   - Supports batch processing of multiple sequence requests at once
+
+The entry_batch approach is particularly valuable in this pipeline because we're extracting multiple gene sequences from multiple reference genomes, each with specific coordinates and orientations. Without blastdbcmd, we would need to write custom parsers to handle sequence extraction from FASTA files, which would be more error-prone and less efficient.
 
 ```bash
 #!/bin/bash
@@ -436,43 +474,6 @@ Make the script executable and run it:
 chmod +x get_target_sequences.sh
 ./get_target_sequences.sh
 ```
-
-### How blastdbcmd Retrieves Subsequences
-
-The `blastdbcmd` tool is a powerful utility for extracting sequences or subsequences from BLAST databases. Here's how it works:
-
-```bash
-blastdbcmd -db ref/Zm-B73-REFERENCE-NAM-5.0 -entry_batch B73_gene_targets_entry_batch.tab > B73_targets.fas.tmp
-```
-
-1. **Sequence retrieval mechanism**: 
-   - blastdbcmd uses the indices created by makeblastdb to directly access sequence data
-   - It can retrieve entire sequences or specific regions (subsequences) based on coordinates
-
-2. **The entry_batch format**:
-   - Each line contains a sequence identifier followed by optional range and strand specifications
-   - Format: `seqid range strand`
-   - Example: `chromosome01 1000-2000 plus`
-   - This means "extract bases 1000 through 2000 from chromosome01 in the forward orientation"
-
-3. **Coordinate system**:
-   - BLAST databases use 1-based inclusive coordinates (first base is position 1)
-   - The range specification is formatted as `start-end` 
-   - For genes on the minus strand, you specify `minus` to get the reverse complement
-
-4. **Handling subsequence extraction**:
-   - When we extract genes with 2kb flanking regions, blastdbcmd performs several steps:
-     - Locates the sequence (e.g., chromosome) containing the gene
-     - Extracts the specified range (gene ± 2kb)
-     - If on the minus strand, automatically reverse-complements the sequence
-     - Returns the subsequence with a header containing the original sequence ID and coordinates
-
-5. **Efficiency benefits**:
-   - Direct byte-offset addressing allows retrieval of just the relevant portion of a chromosome
-   - No need to load entire genome sequences into memory
-   - Supports batch processing of multiple sequence requests at once
-
-The entry_batch approach is particularly valuable in this pipeline because we're extracting multiple gene sequences from multiple reference genomes, each with specific coordinates and orientations. Without blastdbcmd, we would need to write custom parsers to handle sequence extraction from FASTA files, which would be more error-prone and less efficient.
 
 ### 8. Complete Pipeline Script
 

@@ -80,6 +80,19 @@ awk 'FNR==NR{a[$1]=$2;next} /^>/{$0=">"a[substr($0,2)];} 1'  name_swap.tab hpc1_
 # B73 and TIL18 had to be adjusted manually   
 ```
 
+at the end you should have the folloeing files:
+
+```
+name_swap
+├── hpc1_aligned.fasta
+├── hpc1_filtered.fasta
+├── hpc1_filtered_realigned.fasta
+├── hpc1_nice_labels.fasta
+├── hpc1_oneline.fasta
+├── name_swap.tab
+└── sample_label.tab
+```
+
 ### Name swapping command explained:
 1. `FNR==NR{a[$1]=$2;next}` - Reads the name_swap.tab file and stores mappings in array `a`
 2. `/^>/{$0=">"a[substr($0,2)];}` - For header lines, replaces entire line with new header

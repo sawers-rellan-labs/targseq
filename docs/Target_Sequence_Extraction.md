@@ -52,34 +52,40 @@ Create a script called `download_references.sh`:
 #!/bin/bash
 # download_references.sh
 
+# Do not download databases if ref directory already exists
+
+if [ ! -d "ref" ]; then
 # Create working directory
-mkdir -p ref
-cd ref
-
-# B73 maize reference genome
-wget 'https://download.maizegdb.org/Zm-B73-REFERENCE-NAM-5.0/Zm-B73-REFERENCE-NAM-5.0.fa.gz'
-wget 'https://download.maizegdb.org/Zm-B73-REFERENCE-NAM-5.0/Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gene.fa.gz'
-wget 'https://download.maizegdb.org/Zm-B73-REFERENCE-NAM-5.0/Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gff3.gz'
-
-# Teosinte parviglumis (TIL01)
-wget 'https://download.maizegdb.org/Zv-TIL01-REFERENCE-PanAnd-1.0/Zv-TIL01-REFERENCE-PanAnd-1.0.fa.gz'
-wget 'https://download.maizegdb.org/Zv-TIL01-REFERENCE-PanAnd-1.0/Zv-TIL01-REFERENCE-PanAnd-1.0_Zv00001aa.1.gff3.gz'
-
-# Teosinte mexicana (TIL18)
-wget 'https://download.maizegdb.org/Zx-TIL18-REFERENCE-PanAnd-1.0/Zx-TIL18-REFERENCE-PanAnd-1.0.fa.gz'
-wget 'https://download.maizegdb.org/Zx-TIL18-REFERENCE-PanAnd-1.0/Zx-TIL18-REFERENCE-PanAnd-1.0_Zx00002aa.1.gff3.gz'
-
-# Tripsacum dactyloides (Florida accession, because Z)
-wget 'https://download.maizegdb.org/Td-FL_9056069_6-REFERENCE-PanAnd-2.0/Td-FL_9056069_6-REFERENCE-PanAnd-2.0a/Td-FL_9056069_6-REFERENCE-PanAnd-2.0a.fa.gz'
-wget 'https://download.maizegdb.org/Td-FL_9056069_6-REFERENCE-PanAnd-2.0/Td-FL_9056069_6-REFERENCE-PanAnd-2.0a/Td-FL_9056069_6-REFERENCE-PanAnd-2.0a_Td00001bc.1.gff3.gz'
-wget 'https://download.maizegdb.org/Td-FL_9056069_6-REFERENCE-PanAnd-2.0/Td-FL_9056069_6-REFERENCE-PanAnd-2.0a/Td-FL_9056069_6-REFERENCE-PanAnd-2.0a_Td00001bc.1.gene.fa.gz'
-
-# Uncompress all files
-echo "Uncompressing files, this might take a couple of minutes..."
-gunzip *.gz
-echo "Done!"
-
-cd ..
+  mkdir -p ref
+  cd ref
+  
+  # B73 maize reference genome
+  wget 'https://download.maizegdb.org/Zm-B73-REFERENCE-NAM-5.0/Zm-B73-REFERENCE-NAM-5.0.fa.gz'
+  wget 'https://download.maizegdb.org/Zm-B73-REFERENCE-NAM-5.0/Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gene.fa.gz'
+  wget 'https://download.maizegdb.org/Zm-B73-REFERENCE-NAM-5.0/Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gff3.gz'
+  
+  # Teosinte parviglumis (TIL01)
+  wget 'https://download.maizegdb.org/Zv-TIL01-REFERENCE-PanAnd-1.0/Zv-TIL01-REFERENCE-PanAnd-1.0.fa.gz'
+  wget 'https://download.maizegdb.org/Zv-TIL01-REFERENCE-PanAnd-1.0/Zv-TIL01-REFERENCE-PanAnd-1.0_Zv00001aa.1.gff3.gz'
+  
+  # Teosinte mexicana (TIL18)
+  wget 'https://download.maizegdb.org/Zx-TIL18-REFERENCE-PanAnd-1.0/Zx-TIL18-REFERENCE-PanAnd-1.0.fa.gz'
+  wget 'https://download.maizegdb.org/Zx-TIL18-REFERENCE-PanAnd-1.0/Zx-TIL18-REFERENCE-PanAnd-1.0_Zx00002aa.1.gff3.gz'
+  
+  # Tripsacum dactyloides (Florida accession, because Z)
+  wget 'https://download.maizegdb.org/Td-FL_9056069_6-REFERENCE-PanAnd-2.0/Td-FL_9056069_6-REFERENCE-PanAnd-2.0a/Td-FL_9056069_6-REFERENCE-PanAnd-2.0a.fa.gz'
+  wget 'https://download.maizegdb.org/Td-FL_9056069_6-REFERENCE-PanAnd-2.0/Td-FL_9056069_6-REFERENCE-PanAnd-2.0a/Td-FL_9056069_6-REFERENCE-PanAnd-2.0a_Td00001bc.1.gff3.gz'
+  wget 'https://download.maizegdb.org/Td-FL_9056069_6-REFERENCE-PanAnd-2.0/Td-FL_9056069_6-REFERENCE-PanAnd-2.0a/Td-FL_9056069_6-REFERENCE-PanAnd-2.0a_Td00001bc.1.gene.fa.gz'
+  
+  # Uncompress all files
+  echo "Uncompressing files, this might take a couple of minutes..."
+  gunzip *.gz
+  echo "Done!"
+  
+  cd ..
+else
+echo "No downloads made, ref directory found."
+fi
 ```
 
 Make the script executable and run it:
@@ -115,12 +121,14 @@ Create a script called `create_blast_dbs.sh`:
 cd ref
 
 # Index all FASTA files for BLAST search and sequence retrieval
-for s in *.fa; do
-  OUTDB=$(echo $s | sed 's/\.fa$//')
-  echo "Creating BLAST database for $s..."
-  makeblastdb -in $s -out $OUTDB -dbtype nucl -parse_seqids
-done
 
+if [ ! -d "$DIRECTORY" ]; then
+  for s in *.fa; do
+    OUTDB=$(echo $s | sed 's/\.fa$//')
+    echo "Creating BLAST database for $s..."
+    makeblastdb -in $s -out $OUTDB -dbtype nucl -parse_seqids
+  done
+fi
 cd ..
 ```
 
@@ -245,9 +253,8 @@ chmod +x identify_orthologs.sh
 ```
 
 ### 5. Extract Canonical Transcripts from Annotations
-***Work in an interactive session***
 
-### Understanding GFF3 Format
+#### Understanding GFF3 Format
 
 The GFF3 (Generic Feature Format version 3) format is a tab-delimited text file used to describe genomic features. Each feature is described on a single line with 9 fields:
 
@@ -272,6 +279,8 @@ In this pipeline, we're specifically looking for lines with:
 - The attribute "canonical_transcript=1", which indicates this is the primary transcript for the gene
 
 The canonical transcript is important because many genes have alternative splicing that produces multiple transcripts, but we only want to extract one representative transcript per gene.
+
+***Work in an interactive session***
 
 Create a script called `extract_canonical_transcripts.sh`:
 
@@ -340,28 +349,19 @@ chmod +x extract_canonical_transcripts.sh
 ```
 
 ### 6. Create Coordinate Files with Flanking Regions
-***Work in an interactive session***
 
-We will use the gff files from the previous step to build `entry_batch` files for sequence retrieval using the tool `blastdbcmd`.
-Each `entry_batch` file has the necessary info perl line to retrieve a specific subsequence from a blast database.
+#### How blastdbcmd Retrieves Subsequences
 
-<blockquote>
-
-entry_batch
-
-Input file for batch processing. The format requires one entry per line; each line should begin with the sequence ID followed by any of the following optional specifiers (in any order): range (format: 'from-to', inclusive in 1-offsets), strand ('plus' or 'minus'), or masking algorithm ID (integer value representing the available masking algorithm). Omitting the ending range (e.g.: '10-') is supported, but there should not be any spaces around the '-'.
-</blockquote>
-
-See https://www.ncbi.nlm.nih.gov/books/NBK279684/table/appendices.T.blastdbcmd_application_opti/
-
-
-### How blastdbcmd Retrieves Subsequences
-
-The `blastdbcmd` tool is a powerful utility for extracting sequences or subsequences from BLAST databases. Here's how it works:
-
+The `blastdbcmd` tool is a powerful utility for extracting sequences or subsequences from BLAST databases. 
+It used in the following manner:
 ```bash
-blastdbcmd -db ref/Zm-B73-REFERENCE-NAM-5.0 -entry_batch B73_gene_targets_entry_batch.tab > B73_targets.fas.tmp
+blastdbcmd -db ref/Zm-B73-REFERENCE-NAM-5.0 -entry_batch B73_gene_targets_entry_batch.tab > B73_targets.fas
 ```
+
+We will use the gff files from the previous step to build `entry_batch` files for sequence retrieval.
+Each `entry_batch` file has the necessary info per line to retrieve a specific subsequence from a blast database.
+
+Here's how `blastdbcmd` works:
 
 1. **Sequence retrieval mechanism**: 
    - blastdbcmd uses the indices created by makeblastdb to directly access sequence data
@@ -372,6 +372,8 @@ blastdbcmd -db ref/Zm-B73-REFERENCE-NAM-5.0 -entry_batch B73_gene_targets_entry_
    - Format: `seqid range strand`
    - Example: `chromosome01 1000-2000 plus`
    - This means "extract bases 1000 through 2000 from chromosome01 in the forward orientation"
+
+   https://www.ncbi.nlm.nih.gov/books/NBK279684/table/appendices.T.blastdbcmd_application_opti/
 
 3. **Coordinate system**:
    - BLAST databases use 1-based inclusive coordinates (first base is position 1)
@@ -429,6 +431,8 @@ chmod +x extract_coordinates.sh
 ```
 
 ### 7. Extract Target Sequences
+See section 6 for full explanation of `blastdbcmd` fro sequence retrieval.
+
 ***Work in an interactive session***
 
 First, create a tab-separated file named `taxa_db.tab` with columns for the taxa name, the database name, and its correspnding `gene_targets_orthogroup.tab` column index.
@@ -513,7 +517,9 @@ Here's a master script that runs all steps in sequence:
 # run_sequence_extraction_pipeline.sh
 
 echo "1. Creating BLAST databases..."
-# bash create_blast_dbs.sh
+if [ ! -d ref ]; then
+ bash create_blast_dbs.sh
+fi
 
 echo "2. Identifying orthologous genes..."
 bash identify_orthologs.sh

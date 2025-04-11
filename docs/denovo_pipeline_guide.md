@@ -390,10 +390,9 @@ done < <(grep "_R1_" ${SAMPLE_FILE})
 
 
 # Group the sequences by gene
-awk '{if(NR==1) {print $0} else {if($0 ~ /^>/) {print "\n"$0} else {printf "%s",$0}}}' ../reference_sequences.fasta  > reference_sequences.fasta
-awk '{if(NR==1) {print $0} else {if($0 ~ /^>/) {print "\n"$0} else {printf "%s",$0}}}' ../TIL18_reference_sequences.fasta  > TIL18_reference_sequences.fasta
-cat reference_sequences.fasta TIL18_reference_sequences.fasta  blast_results/*_best_hits.fasta | perl -pe 's/>/\n>/g' > blast_results/all_hits.fas 
-ls 
+# Convert fasta files to one line sequence files
+awk '{if(NR==1) {print $0} else {if($0 ~ /^>/) {print "\n"$0} else {printf "%s",$0}}}' ../*_target_sequences.fasta  > reference_sequences.fasta
+cat reference_sequences.fasta   blast_results/*_best_hits.fasta | perl -pe 's/>/\n>/g' > blast_results/all_hits.fas 
 cut -f1 blast_results/*_blast_results.txt| sort |uniq | while IFS=$'\t' read -r GENE; do grep -A 1 "${GENE}" blast_results/all_hits.fas | grep -v -- "^--$" > blast_results/${GENE}.fas; done
 ```
 

@@ -127,6 +127,10 @@ name_swap/
 ├── name_swap.tab                # Mapping of IDs to taxa names
 └── sample_label.tab             # Mapping of sample numbers to labels
 ```
+You might impove the fasta manipulations with the code snippets from:
+
+- [scriptome](https://web.archive.org/web/20230604005656/http://archive.sysbio.harvard.edu/CSB/resources/computational/scriptome/UNIX/Protocols/Sequences.html)
+- [RobertsLab](https://github.com/RobertsLab/code/blob/master/fasta.md)
 
 ### Alternative: R Biostrings Approach
 For a more readable solution in R, consider using the Biostrings package for FASTA manipulations.

@@ -389,10 +389,9 @@ while IFS=$'\t' read -r SAMPLE_ID FILENAME; do
 done < <(grep "_R1_" ${SAMPLE_FILE})
 
 
-
 # Convert fasta files to one line sequence files
 awk '{if(NR==1) {print $0} else {if($0 ~ /^>/) {print "\n"$0} else {printf "%s",$0}}}' ../*_target_sequences.fasta  > reference_sequences.fasta
-# Make single file for all genes all taxa
+# Make single file for all genes, all taxa
 cat reference_sequences.fasta   blast_results/*_best_hits.fasta | perl -pe 's/>/\n>/g' > blast_results/all_hits.fas 
 # Group the sequences by gene
 cut -f1 blast_results/*_blast_results.txt| sort |uniq | while IFS=$'\t' read -r GENE; do grep -A 1 "${GENE}" blast_results/all_hits.fas | grep -v -- "^--$" > blast_results/${GENE}.fas; done

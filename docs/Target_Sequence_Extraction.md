@@ -89,9 +89,6 @@ chmod +x download_references.sh
 ./download_references.sh
 ```
 
-
-
-
 ### 3. Create BLAST Databases
 ***From this point onwards use an interactive session***
 
@@ -133,6 +130,41 @@ Make the script executable and run it:
 chmod +x create_blast_dbs.sh
 ./create_blast_dbs.sh
 ```
+
+### Why Use BLAST+ Databases?
+
+BLAST+ databases provide several advantages for comparative genomics work:
+
+1. **Efficient sequence storage and indexing**: BLAST databases convert FASTA files into specialized, indexed formats that enable rapid sequence searching and retrieval.
+
+2. **Sequence lookup by ID**: When working with multiple genomes and thousands of genes, direct sequence lookup by identifier is much faster than parsing FASTA files.
+
+3. **Range-based extraction**: BLAST databases allow you to extract specific regions of sequences (like genes with flanking regions) without loading entire chromosomes into memory.
+
+4. **Sequence orientation control**: You can easily extract sequences in either forward or reverse complement orientation based on the strand information.
+
+5. **Pre-formatted for homology searches**: The same databases used for sequence extraction can be used for BLAST searches to identify orthologous sequences.
+
+### How BLAST+ Databases Are Created and Indexed
+
+The `makeblastdb` command is used to create BLAST databases from FASTA files. Here's what happens during the process:
+
+```bash
+makeblastdb -in genome.fa -out genome_db -dbtype nucl -parse_seqids
+```
+
+- **Database creation**: The command processes the input FASTA file and creates multiple specialized files with extensions like .nhr, .nin, .nsq, which collectively form the BLAST database.
+
+- **Sequence parsing**: The `-parse_seqids` flag is crucial as it instructs makeblastdb to interpret and index the sequence identifiers from the FASTA headers. This enables later retrieval of sequences by their IDs.
+
+- **Indexing mechanism**: The tool creates multiple index files:
+  - `.nhr` files contain header information
+  - `.nin` files contain the index of sequence names
+  - `.nsq` files contain the actual sequence data in a compressed format
+
+- **Database types**: The `-dbtype nucl` parameter specifies that we're working with nucleotide sequences (as opposed to protein sequences with `-dbtype prot`).
+
+Without proper indexing, sequence retrieval would require linear scanning of potentially huge genome files, making the process extremely slow.
 
 ### 4. Identify Orthologous Genes
 ***Work in an interactive session***
@@ -291,7 +323,7 @@ Each entry batch file has the necessary info to retrieve a specific subsequence 
 
 entry_batch
 
-Input file for batch processing. The format requires one entry per line; each line should begin with the sequence ID followed by any of the following optional specifiers (in any order): range (format: ‘from-to’, inclusive in 1-offsets), strand (‘plus’ or ‘minus’), or masking algorithm ID (integer value representing the available masking algorithm). Omitting the ending range (e.g.: ‘10-‘) is supported, but there should not be any spaces around the ‘-‘.
+Input file for batch processing. The format requires one entry per line; each line should begin with the sequence ID followed by any of the following optional specifiers (in any order): range (format: 'from-to', inclusive in 1-offsets), strand ('plus' or 'minus'), or masking algorithm ID (integer value representing the available masking algorithm). Omitting the ending range (e.g.: '10-') is supported, but there should not be any spaces around the '-'.
 </blockquote>
 
 See https://www.ncbi.nlm.nih.gov/books/NBK279684/table/appendices.T.blastdbcmd_application_opti/
@@ -405,6 +437,43 @@ chmod +x get_target_sequences.sh
 ./get_target_sequences.sh
 ```
 
+### How blastdbcmd Retrieves Subsequences
+
+The `blastdbcmd` tool is a powerful utility for extracting sequences or subsequences from BLAST databases. Here's how it works:
+
+```bash
+blastdbcmd -db ref/Zm-B73-REFERENCE-NAM-5.0 -entry_batch B73_gene_targets_entry_batch.tab > B73_targets.fas.tmp
+```
+
+1. **Sequence retrieval mechanism**: 
+   - blastdbcmd uses the indices created by makeblastdb to directly access sequence data
+   - It can retrieve entire sequences or specific regions (subsequences) based on coordinates
+
+2. **The entry_batch format**:
+   - Each line contains a sequence identifier followed by optional range and strand specifications
+   - Format: `seqid range strand`
+   - Example: `chromosome01 1000-2000 plus`
+   - This means "extract bases 1000 through 2000 from chromosome01 in the forward orientation"
+
+3. **Coordinate system**:
+   - BLAST databases use 1-based inclusive coordinates (first base is position 1)
+   - The range specification is formatted as `start-end` 
+   - For genes on the minus strand, you specify `minus` to get the reverse complement
+
+4. **Handling subsequence extraction**:
+   - When we extract genes with 2kb flanking regions, blastdbcmd performs several steps:
+     - Locates the sequence (e.g., chromosome) containing the gene
+     - Extracts the specified range (gene ± 2kb)
+     - If on the minus strand, automatically reverse-complements the sequence
+     - Returns the subsequence with a header containing the original sequence ID and coordinates
+
+5. **Efficiency benefits**:
+   - Direct byte-offset addressing allows retrieval of just the relevant portion of a chromosome
+   - No need to load entire genome sequences into memory
+   - Supports batch processing of multiple sequence requests at once
+
+The entry_batch approach is particularly valuable in this pipeline because we're extracting multiple gene sequences from multiple reference genomes, each with specific coordinates and orientations. Without blastdbcmd, we would need to write custom parsers to handle sequence extraction from FASTA files, which would be more error-prone and less efficient.
+
 ### 8. Complete Pipeline Script
 
 Here's a master script that runs all steps in sequence:
@@ -448,7 +517,7 @@ This pipeline performs the following steps:
 
 2. **Download reference genomes**: We download genome assemblies and annotations for B73 maize, two teosinte species (parviglumis and mexicana), and Tripsacum.
 
-3. **Create BLAST databases**: We index the genomes to enable BLAST searches.
+3. **Create BLAST databases**: We index the genomes to enable BLAST searches and efficient sequence retrieval. The BLAST+ database format provides random access to sequences without needing to parse entire FASTA files.
 
 4. **Identify orthologous genes**: We use either:
    - Pre-computed OrthoMCL results if available
@@ -458,7 +527,7 @@ This pipeline performs the following steps:
 
 6. **Add flanking regions**: We extend the coordinates by 2kb upstream and 2kb downstream to capture potential regulatory regions.
 
-7. **Extract target sequences**: We use blastdbcmd to extract the sequences based on the extended coordinates.
+7. **Extract target sequences**: We use blastdbcmd to extract the sequences based on the extended coordinates. This leverages the indexed database structure to efficiently retrieve specific subsequences from potentially very large genome files.
 
 8. **Rename sequences for clarity**: We modify the sequence headers to include:
    - The gene symbol from B73
@@ -485,6 +554,7 @@ ACTGGCATTCGCTAGCTAGCTGA...
 - **BLAST database errors**: 
   - Ensure BLAST databases have been created with `-parse_seqids` flag
   - Check that the paths to reference files are correct
+  - Verify the BLAST database files (.nhr, .nin, .nsq) exist and are not corrupted
 
 - **Empty GFF files**: 
   - Verify that orthologs exist in all species
@@ -496,6 +566,11 @@ ACTGGCATTCGCTAGCTAGCTGA...
 - **Windows line endings**:
   - If scripts fail with syntax errors, check for Windows line endings
   - Fix with `dos2unix *.sh`
+
+- **blastdbcmd errors**:
+  - If you get "Entry not found" errors, verify the sequence IDs exist in the original FASTA
+  - Make sure reference databases were created with the `-parse_seqids` flag
+  - Check that chromosome/scaffold IDs match exactly between your entry_batch file and the database
 
 ## Advanced Options
 
@@ -515,6 +590,10 @@ ACTGGCATTCGCTAGCTAGCTGA...
 - **Parallel processing**:
   - Add GNU Parallel support for faster processing of multiple genes
   - Example: `cat gene_list | parallel -j 8 './process_gene.sh {}'`
+
+- **BLAST database optimization**:
+  - For very large genomes, use the `-max_file_sz` parameter with makeblastdb to control database file size
+  - Use `-hash_index` for larger genomes when memory is limited during database creation
 
 ## Further Analysis Ideas
 

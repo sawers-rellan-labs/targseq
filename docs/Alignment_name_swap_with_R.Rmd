@@ -4,7 +4,7 @@ This tutorial demonstrates how to use R with the Biostrings package to replace g
 
 ## Setup and Required Packages
 
-```{r,}
+```{r,message=FALSE,warning=FALSE}
 # Install required packages if not already installed
 if (!requireNamespace("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
@@ -99,6 +99,26 @@ trimmedRanges <- GRanges(seqnames = names(filtered_alignment) ,
 )
 trimmed_alignment <- filtered_alignment[trimmedRanges]
 names(trimmed_alignment)
+
+# get the positiov of I211V
+trimmed_alignment
+
+I211V_B73 <-vmatchPattern("ATCACCCGC", trimmed_alignment)[[1]]
+
+I211V_range <- GRanges(
+  seqnames = names(filtered_alignment) ,
+              ranges = IRanges(start = rep(start(I211V_B73),n_taxa),
+                               end = rep(start(I211V_B73),n_taxa))
+)
+
+I211V_aln <-trimmed_alignment[I211V_range]
+I211V_matrix <- as.matrix(I211V_aln)
+I211V_matrix[I211V_matrix=="-"] <- NA 
+I211V_matrix
+name_swap$I211V <- factor(as.vector(I211V_matrix))
+
+
+
 ```
 
 ## Step 5: Replace Sequence Names and Write New FASTA
@@ -114,31 +134,121 @@ writeXStringSet(trimmed_alignment, "~/Desktop/hpc1_nice_labels.fasta", format="f
 
 ```{r}
 library(ape)
+
+# Pivot tree on tip, so the tip gets on top.
+
+pivot_on <- function(x, target_tip){
+  target_tip_label <-target_tip
+    tree <- x
+  # Make a copy to modify, keeping the original intact
+  rotated_tree <- tree
+  
+  # Check if the target tip exists in the tree
+  if (!target_tip_label %in% rotated_tree$tip.label) {
+    stop("Target tip '", target_tip_label, "' not found in the tree.")
+  }
+  
+  # Get the total number of tips
+  ntips <- Ntip(rotated_tree)
+  
+  # Get the node number corresponding to the target tip
+  target_tip_node <- which(rotated_tree$tip.label == target_tip_label)
+  
+  # Get the reference node number 
+  # The tree might not be rooted
+  # choose a reference node to find a path around which to do the rotations 
+  # maybe TIL18?
+  reference_node <- ntips 
+  
+  
+  node_path <- nodepath(rotated_tree, from = reference_node, to = target_tip_node)
+  
+  # We only need to consider rotating the *internal* nodes on the path
+  # Exclude the root (first element) and the tip itself (last element)
+  internal_nodes_on_path <- node_path[node_path > ntips & node_path != root_node]
+  
+  # Iterate through the internal nodes on the path, starting from the one
+  # closest to the root.
+  # For each node, check the order of its children. If the child leading
+  # towards our target tip is currently the 'first' child (which ape usually
+  # plots lower/towards the bottom in a rightward phylogram), rotate the node
+  # so that the child leading to the target tip becomes the 'second' child
+  # (plotted higher/towards the top).
+  
+  if (length(internal_nodes_on_path) > 0) {
+    # Order matters: Process nodes from root towards tip
+    nodes_to_check <- sort(internal_nodes_on_path)
+    
+    for (node_to_rotate in nodes_to_check) {
+      # Find the direct children of this internal node
+      children <- rotated_tree$edge[rotated_tree$edge[, 1] == node_to_rotate, 2]
+      
+      # Should always have 2 children for a bifurcating tree
+      if (length(children) != 2) {
+        warning("Node ", node_to_rotate, " is not bifurcating. Rotation might not work as expected.")
+        next # Skip rotation for non-bifurcating nodes
+      }
+      
+      # Find which child is on the path towards the target tip
+      # It will be the next node in the full node_path sequence
+      current_node_index_in_path <- which(node_path == node_to_rotate)
+      child_on_path <- node_path[current_node_index_in_path + 1]
+      
+      # Check if the child *on the path* is the *first* child listed in the edge table
+      # If it is, rotating the node will swap it to the second position.
+      if (child_on_path == children[1]) {
+        # Rotate the tree at this node
+        # The rotate function returns the modified tree object
+        rotated_tree <- rotate(rotated_tree, node = node_to_rotate)
+        # Note: After rotation, the edge table and potentially node numbers
+        # for descendants might change, but nodepath should still be valid
+        # relative to the *original* topology's node identities if we recalculate path,
+        # or simply proceed as the fundamental connections remain.
+        # Sticking to the original path nodes should be fine.
+      }
+    }
+  }
+  rotated_tree
+}
+
+
+
 library(phangorn)
+library(phytools)
 hpc1_aln <- read.dna("~/Desktop/hpc1_nice_labels.fasta", format="fasta")
 labels(hpc1_aln)
 hpc1_phyDat <- phyDat(hpc1_aln, type = "DNA", levels = NULL)
 # mt <- modelTest(hpc1_phyDat)
 dna_dist <- dist.ml(hpc1_phyDat, model="JC69") #?
-hpc1_UPGMA <- upgma(dna_dist)
-library(phytools)
-pdf(file="~/Desktop/hpc1_UPGMA.pdf",height = 12,width =6)
-dotTree(hpc1_UPGMA,locus_ancestry,, type="i",fsize=0.8)
-dev.off()
+
+
+hpc1_UPGMA <- ladderize(upgma(dna_dist),right = FALSE)
 name_swap$founder_ancestry <- factor(name_swap$founder_ancestry, c("Recurrent","Donor"))
-locus_ancestry <- factor(name_swap$founder_ancestry)
-pal <- c("gold","purple3")
-names(pal) <-  c("Recurrent","Donor")
-
-X <- name_swap[,"founder_ancestry",drop=FALSE]
-rownames(X) <- name_swap$label_3
-
-pdf(file="~/Desktop/hpc1_UPGMA_dot_tree.pdf",height = 13,width =7)
-dotTree(hpc1_UPGMA,X,colors= pal, fsize=0.8,border="transparent",cex.dot=2)
-dev.off()
 
 
-write.tree(hpc1_NJ, file="~/Desktop/hpc1_UPGMA.tre")
+
+
+plot_output <- function(file, tree,data){ 
+  data <- data %>% dplyr::rename(ancestry="founder_ancestry")
+  pal <- c("gold","purple3","tomato","royalblue")
+  names(pal) <-  c("Recurrent","Donor","A","G")
+  X <- data[,c("ancestry","I211V")]
+  rownames(X) <- rownames(data) 
+  pdf(file=file,height = 13,width =7)
+  dotTree(tree ,X,colors= pal,labels=TRUE, fsize=0.8,border="transparent",cex.dot=2)
+  dev.off()
+}
+
+rownames(name_swap) <- name_swap$label_5
+hpc1_UPGMA$tip.label <- name_swap$label_5
+out_tree<-pivot_on(hpc1_UPGMA, hpc1_UPGMA$tip.label[1]) 
+quartz(height = 13,width =7);plot(out_tree)
+name_swap[,c("founder_ancestry","I211V")]
+plot_output("~/Desktop/hpc1_UPGMA_dot_tree.pdf", 
+            out_tree,
+            name_swap)
+
+write.tree(rotated_tree, file="~/Desktop/hpc1_UPGMA.tre")
 ```
 
 ## Advantages of the R Approach

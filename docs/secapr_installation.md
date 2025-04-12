@@ -20,6 +20,16 @@ This step should be run from the login node.
 `fastp`  from https://github.com/OpenGene/fastp
 
 ```
- conda install -c bioconda fastp
+conda install -c bioconda fastp
 ```
- 
+
+`circos` has `perl::GD` for plotting of blast results.
+
+```
+conda create -p /share/maize/user/env/circos  bioconda::circos bioconda::blast
+conda activate /share/maize/user/env/circos
+```
+
+`blast-imager.pl`
+https://github.com/vinuesa/TIB-filoinfo/tree/master
+

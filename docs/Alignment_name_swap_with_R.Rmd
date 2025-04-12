@@ -1,0 +1,152 @@
+# Swapping FASTA Sequence Names in R with Biostrings
+
+This tutorial demonstrates how to use R with the Biostrings package to replace generic sequence IDs in FASTA files with informative taxonomic labels.
+
+## Setup and Required Packages
+
+```{r,}
+# Install required packages if not already installed
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+if (!requireNamespace("Biostrings", quietly = TRUE))
+  BiocManager::install("Biostrings")
+
+if (!requireNamespace("tidyverse", quietly = TRUE))
+  install.packages("tidyverse")
+
+# Load packages
+library(Biostrings)  # For FASTA manipulation
+library(tidyverse)   # For data manipulation
+```
+
+## Step 1: Read Mapping Files
+
+First, let's load the mapping tables that connect sequence IDs to taxa names:
+
+```{r}
+# Read the mapping table
+metadata <- read.csv("~/Desktop/seqid_label.csv")
+
+# Display the first few rows of each
+head(metadata)
+
+```
+
+## Step 2: Read the FASTA Alignment File
+
+Next, we'll read the original FASTA alignment using Biostrings:
+
+```{r}
+# Read FASTA alignment
+aln_file <- "~/Desktop/name_swap/hpc1_aligned.fasta"
+original_alignment <- readDNAStringSet(aln_file)
+
+# View some information about the alignment
+length(original_alignment)  # Number of sequences
+width(original_alignment)   # Sequence lengths
+```
+
+## Step 3: Filter Sequences of Interest
+
+Let's filter the alignment to keep only our samples of interest:
+
+```{r}
+# Create a vector of sequences to keep (reference sequences + samples)
+# samples_to_keep <- c("hpc1_B73", "hpc1_TIL18", paste0("hpc1_", sample_label$sample))
+
+# Filter the alignment
+# filtered_alignment <- original_alignment[names(original_alignment) %in% samples_to_keep]
+
+# Check how many sequences we have now
+# length(filtered_alignment)
+
+# filtered_alignment <- original_alignment
+```
+
+## Step 4: Create a Complete Name Mapping Table
+
+
+
+```{r}
+# Extract sequence IDs from the filtered alignment
+
+seq_ids <- names(original_alignment)
+# remove description field
+trimmed_ids <- gsub("\\s.*", "", seq_ids, perl=TRUE)
+length(trimmed_ids)
+length(original_alignment)
+names(original_alignment) <- trimmed_ids
+
+
+colnames(metadata)
+name_swap <- data.frame(seqid = trimmed_ids) %>%
+   mutate(aln_order = row_number()) %>%
+  inner_join(metadata)
+
+name_swap  <- name_swap %>%
+  dplyr::filter(seqid %in% names(original_alignment))
+nrow(name_swap)
+filtered_alignment <- original_alignment[name_swap$seqid]
+names(filtered_alignment) <- name_swap$label_3 
+n_taxa <- length(filtered_alignment)
+n_pos <- width(filtered_alignment)
+filtered_alignment
+library(GenomicRanges)
+trimmedRanges <- GRanges(seqnames = names(filtered_alignment) ,
+                    ranges = IRanges(start = rep(2226,n_taxa),
+                                     end = n_pos)
+)
+trimmed_alignment <- filtered_alignment[trimmedRanges]
+names(trimmed_alignment)
+```
+
+## Step 5: Replace Sequence Names and Write New FASTA
+
+Finally, we'll apply the mapping and write out the new alignment:
+
+```{r}
+# Write the renamed alignment to a new file
+writeXStringSet(trimmed_alignment, "~/Desktop/hpc1_nice_labels.fasta", format="fasta")
+```
+
+## Step 6: Make phylogenetic Tree
+
+```{r}
+library(ape)
+library(phangorn)
+hpc1_aln <- read.dna("~/Desktop/hpc1_nice_labels.fasta", format="fasta")
+labels(hpc1_aln)
+hpc1_phyDat <- phyDat(hpc1_aln, type = "DNA", levels = NULL)
+# mt <- modelTest(hpc1_phyDat)
+dna_dist <- dist.ml(hpc1_phyDat, model="JC69") #?
+hpc1_UPGMA <- upgma(dna_dist)
+library(phytools)
+pdf(file="~/Desktop/hpc1_UPGMA.pdf",height = 12,width =6)
+dotTree(hpc1_UPGMA,locus_ancestry,, type="i",fsize=0.8)
+dev.off()
+name_swap$founder_ancestry <- factor(name_swap$founder_ancestry, c("Recurrent","Donor"))
+locus_ancestry <- factor(name_swap$founder_ancestry)
+pal <- c("gold","purple3")
+names(pal) <-  c("Recurrent","Donor")
+
+X <- name_swap[,"founder_ancestry",drop=FALSE]
+rownames(X) <- name_swap$label_3
+
+pdf(file="~/Desktop/hpc1_UPGMA_dot_tree.pdf",height = 13,width =7)
+dotTree(hpc1_UPGMA,X,colors= pal, fsize=0.8,border="transparent",cex.dot=2)
+dev.off()
+
+
+write.tree(hpc1_NJ, file="~/Desktop/hpc1_UPGMA.tre")
+```
+
+## Advantages of the R Approach
+
+1. **Readability**: The R code is more self-explanatory than complex bash commands
+2. **Flexibility**: Easy to modify for different naming patterns or additional data processing
+3. **Error Handling**: Better handling of edge cases and missing mappings
+4. **Integration**: Can be part of a larger R-based bioinformatics workflow
+5. **Visualization**: Can easily add sequence visualization or analysis in the same script
+
+This approach eliminates the need for intermediate files and complex awk or grep commands, making the process more streamlined and reproducible.

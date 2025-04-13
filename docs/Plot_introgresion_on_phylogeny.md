@@ -1,30 +1,24 @@
----
-title: "Maize Phylogeny Analysis with Alignment Relabeling"
-author: "Maize Genetics Lab"
-date: "`r Sys.Date()`"
-output:
-  github_document:
-    html_preview: false
----
-
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, eval = FALSE)
-```
+Maize Phylogeny Analysis with Alignment Relabeling
+================
+Maize Genetics Lab
+2025-04-13
 
 # Maize Phylogeny Analysis Tutorial
 
-This tutorial walks through a complete workflow for processing maize genetic data, focusing on:
+This tutorial walks through a complete workflow for processing maize
+genetic data, focusing on:
 
-1. Relabeling sequence identifiers in a FASTA alignment with meaningful taxonomic labels
-2. Extracting genotype information at the I211V variant position
-3. Creating a phylogenetic tree with ancestry and variant information
-4. Rotating the tree to position the B73 reference genome at the top
+1.  Relabeling sequence identifiers in a FASTA alignment with meaningful
+    taxonomic labels
+2.  Extracting genotype information at the I211V variant position
+3.  Creating a phylogenetic tree with ancestry and variant information
+4.  Rotating the tree to position the B73 reference genome at the top
 
 ## 1. Setting up the Environment
 
-First, let's install and load the necessary packages:
+First, let’s install and load the necessary packages:
 
-```{r load_packages}
+``` r
 # Install required packages if not already installed
 if (!requireNamespace("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
@@ -42,9 +36,9 @@ library(tidyverse)   # For data manipulation
 
 ## 2. Reading Input Files
 
-Let's set up our directory structure and read our input files:
+Let’s set up our directory structure and read our input files:
 
-```{r read_inputs}
+``` r
 # Create a project directory if it doesn't exist
 project_dir <- "tree_plotting"
 if (!dir.exists(project_dir)) {
@@ -74,9 +68,9 @@ head(names(original_alignment))
 
 ## 3. Creating the Name Mapping Table
 
-Now we'll prepare our sequence names and map them to meaningful labels:
+Now we’ll prepare our sequence names and map them to meaningful labels:
 
-```{r create_mapping}
+``` r
 # Extract sequence IDs from the alignment and remove description fields
 seq_ids <- names(original_alignment)
 trimmed_ids <- gsub("\\s.*", "", seq_ids, perl=TRUE)
@@ -117,9 +111,9 @@ head(names(filtered_alignment))
 
 ## 4. Trimming the Alignment and Extracting the I211V Variant Information
 
-Next, we'll trim the alignment and identify the I211V variant position:
+Next, we’ll trim the alignment and identify the I211V variant position:
 
-```{r extract_variant}
+``` r
 # Load GenomicRanges for efficient sequence manipulation
 library(GenomicRanges)
 
@@ -169,9 +163,9 @@ table(name_swap$I211V, useNA = "ifany")
 
 ## 5. Writing the Processed Alignment to a New File
 
-Let's save our relabeled and trimmed alignment:
+Let’s save our relabeled and trimmed alignment:
 
-```{r write_alignment}
+``` r
 # Define output file path
 output_alignment <- file.path(project_dir, "hpc1_nice_labels.fasta")
 
@@ -182,9 +176,10 @@ cat("Renamed alignment written to:", output_alignment, "\n")
 
 ## 6. Building a Phylogenetic Tree
 
-Now we'll build and visualize a phylogenetic tree from our processed alignment:
+Now we’ll build and visualize a phylogenetic tree from our processed
+alignment:
 
-```{r build_tree}
+``` r
 # Load packages for phylogenetic analysis
 library(ape)
 library(phangorn)
@@ -217,9 +212,10 @@ plot(hpc1_UPGMA, cex = 0.7, main = "UPGMA Tree Before Rotation")
 
 ## 7. Implementing the Tree Rotation Function
 
-To position B73 at the top of our visualization, we need a specialized rotation function:
+To position B73 at the top of our visualization, we need a specialized
+rotation function:
 
-```{r pivot_function}
+``` r
 # Function to rotate a tree to position a specific tip at the top
 pivot_on <- function(x, target_tip){
   target_tip_label <- target_tip
@@ -284,9 +280,9 @@ pivot_on <- function(x, target_tip){
 
 ## 8. Applying the Rotation and Creating the Final Visualization
 
-Now let's apply our rotation function and create the final plot:
+Now let’s apply our rotation function and create the final plot:
 
-```{r final_visualization}
+``` r
 # Ensure row names in our metadata match the tree's tip labels
 rownames(name_swap) <- name_swap$label_2
 
@@ -332,34 +328,43 @@ plot(out_tree, main = "Rotated Tree with B73 at Top", cex = 0.7)
 
 ## 9. Project File Structure
 
-Let's examine the complete file structure of our project:
+Let’s examine the complete file structure of our project:
 
-```{r file_structure, echo=FALSE, eval=TRUE}
-# This chunk will be evaluated when knitting
-cat("tree_plotting/\n")
-cat("├── hpc1_aligned.fasta        # Input: Original alignment file\n")
-cat("├── seqid_label.csv         # Input: Metadata mapping technical IDs to meaningful names\n")
-cat("├── hpc1_nice_labels.fasta    # Output: Alignment with renamed sequences\n")
-cat("├── hpc1_UPGMA.tre            # Output: Phylogenetic tree in Newick format\n")
-cat("└── hpc1_UPGMA_dot_tree.pdf   # Output: Visualization with ancestry and variant information\n")
-```
+    ## tree_plotting/
+
+    ## ├── hpc1_aligned.fasta        # Input: Original alignment file
+
+    ## ├── seqid_label.csv         # Input: Metadata mapping technical IDs to meaningful names
+
+    ## ├── hpc1_nice_labels.fasta    # Output: Alignment with renamed sequences
+
+    ## ├── hpc1_UPGMA.tre            # Output: Phylogenetic tree in Newick format
+
+    ## └── hpc1_UPGMA_dot_tree.pdf   # Output: Visualization with ancestry and variant information
 
 ## Conclusion
 
 This tutorial demonstrated how to:
 
-1. Load and process FASTA alignment data using Biostrings
-2. Map sequence IDs to meaningful taxonomic labels
-3. Extract genotype information at the I211V variant position
-4. Build a phylogenetic tree using distance-based methods
-5. Rotate the tree to position B73 at the top
-6. Visualize the tree with ancestry and variant information
+1.  Load and process FASTA alignment data using Biostrings
+2.  Map sequence IDs to meaningful taxonomic labels
+3.  Extract genotype information at the I211V variant position
+4.  Build a phylogenetic tree using distance-based methods
+5.  Rotate the tree to position B73 at the top
+6.  Visualize the tree with ancestry and variant information
 
-These skills are widely applicable to comparative genomics and population genetics studies in maize and other organisms.
+These skills are widely applicable to comparative genomics and
+population genetics studies in maize and other organisms.
 
 ## Troubleshooting Tips
 
-- **Error finding I211V position**: If the `vmatchPattern` function fails, verify that the pattern sequence exists in your alignment. You may need to adjust the pattern or the starting position.
-- **Tree tips not matching metadata**: Ensure that the labels in your tree match exactly with the rownames in your metadata dataframe.
-- **Rotation function not working**: The rotation function assumes a bifurcating tree. If your tree has multifurcations, you may need to modify the function.
-- **Missing data in visualization**: Check for NA values in your metadata columns, especially the founder_ancestry and I211V columns.
+- **Error finding I211V position**: If the `vmatchPattern` function
+  fails, verify that the pattern sequence exists in your alignment. You
+  may need to adjust the pattern or the starting position.
+- **Tree tips not matching metadata**: Ensure that the labels in your
+  tree match exactly with the rownames in your metadata dataframe.
+- **Rotation function not working**: The rotation function assumes a
+  bifurcating tree. If your tree has multifurcations, you may need to
+  modify the function.
+- **Missing data in visualization**: Check for NA values in your
+  metadata columns, especially the founder_ancestry and I211V columns.

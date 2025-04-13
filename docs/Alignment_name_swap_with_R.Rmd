@@ -3,8 +3,12 @@
 This tutorial demonstrates how to use R with the Biostrings package to replace generic sequence IDs in FASTA files with informative taxonomic labels.
 
 ## Setup and Required Packages
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(eval = FALSE)
+```
 
-```{r,message=FALSE,warning=FALSE}
+```{r,message=FALSE,warning=FALSE, }
+
 # Install required packages if not already installed
 if (!requireNamespace("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
@@ -26,7 +30,7 @@ First, let's load the mapping tables that connect sequence IDs to taxa names:
 
 ```{r}
 # Read the mapping table
-metadata <- read.csv("~/Desktop/seqid_label.csv")
+metadata <- read.csv("~/Desktop/seqid_label_1.csv")
 
 # Display the first few rows of each
 head(metadata)
@@ -43,25 +47,8 @@ aln_file <- "~/Desktop/name_swap/hpc1_aligned.fasta"
 original_alignment <- readDNAStringSet(aln_file)
 
 # View some information about the alignment
-length(original_alignment)  # Number of sequences
-width(original_alignment)   # Sequence lengths
-```
-
-## Step 3: Filter Sequences of Interest
-
-Let's filter the alignment to keep only our samples of interest:
-
-```{r}
-# Create a vector of sequences to keep (reference sequences + samples)
-# samples_to_keep <- c("hpc1_B73", "hpc1_TIL18", paste0("hpc1_", sample_label$sample))
-
-# Filter the alignment
-# filtered_alignment <- original_alignment[names(original_alignment) %in% samples_to_keep]
-
-# Check how many sequences we have now
-# length(filtered_alignment)
-
-# filtered_alignment <- original_alignment
+length(original_alignment) # Number of sequences
+width(original_alignment)[1]  # Sequence lengths
 ```
 
 ## Step 4: Create a Complete Name Mapping Table
@@ -88,7 +75,7 @@ name_swap  <- name_swap %>%
   dplyr::filter(seqid %in% names(original_alignment))
 nrow(name_swap)
 filtered_alignment <- original_alignment[name_swap$seqid]
-names(filtered_alignment) <- name_swap$label_3 
+names(filtered_alignment) <- name_swap$label_2 
 n_taxa <- length(filtered_alignment)
 n_pos <- width(filtered_alignment)
 filtered_alignment
@@ -139,7 +126,7 @@ library(ape)
 
 pivot_on <- function(x, target_tip){
   target_tip_label <-target_tip
-    tree <- x
+  tree <- x
   # Make a copy to modify, keeping the original intact
   rotated_tree <- tree
   
@@ -164,8 +151,9 @@ pivot_on <- function(x, target_tip){
   node_path <- nodepath(rotated_tree, from = reference_node, to = target_tip_node)
   
   # We only need to consider rotating the *internal* nodes on the path
+  internal_nodes_on_path <- node_path[node_path > ntips]
   # Exclude the root (first element) and the tip itself (last element)
-  internal_nodes_on_path <- node_path[node_path > ntips & node_path != root_node]
+  #internal_nodes_on_path <- node_path[node_path > ntips & node_path != root_node]
   
   # Iterate through the internal nodes on the path, starting from the one
   # closest to the root.
@@ -221,9 +209,9 @@ hpc1_phyDat <- phyDat(hpc1_aln, type = "DNA", levels = NULL)
 # mt <- modelTest(hpc1_phyDat)
 dna_dist <- dist.ml(hpc1_phyDat, model="JC69") #?
 
-
+name_swap$founder_ancestry 
 hpc1_UPGMA <- ladderize(upgma(dna_dist),right = FALSE)
-name_swap$founder_ancestry <- factor(name_swap$founder_ancestry, c("Recurrent","Donor"))
+name_swap$founder_ancestry <- factor(name_swap$founder_ancestry, levels=c("Recurrent","Donor"))
 
 
 
@@ -235,20 +223,24 @@ plot_output <- function(file, tree,data){
   X <- data[,c("ancestry","I211V")]
   rownames(X) <- rownames(data) 
   pdf(file=file,height = 13,width =7)
-  dotTree(tree ,X,colors= pal,labels=TRUE, fsize=0.8,border="transparent",cex.dot=2)
+  dotTree(tree ,X,colors= pal,labels=TRUE, fsize=0.7,border="transparent",cex.dot=2)
   dev.off()
 }
 
-rownames(name_swap) <- name_swap$label_5
-hpc1_UPGMA$tip.label <- name_swap$label_5
+rownames(name_swap) <- name_swap$label_2
+# check_names <- rownames(name_swap)
+# names(check_names) <- name_swap$label_3
+# check_names
+# hpc1_UPGMA$tip.label
+
 out_tree<-pivot_on(hpc1_UPGMA, hpc1_UPGMA$tip.label[1]) 
-quartz(height = 13,width =7);plot(out_tree)
-name_swap[,c("founder_ancestry","I211V")]
+
+
 plot_output("~/Desktop/hpc1_UPGMA_dot_tree.pdf", 
             out_tree,
             name_swap)
 
-write.tree(rotated_tree, file="~/Desktop/hpc1_UPGMA.tre")
+write.tree(out_tree, file="~/Desktop/hpc1_UPGMA.tre")
 ```
 
 ## Advantages of the R Approach

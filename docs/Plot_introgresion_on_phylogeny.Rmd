@@ -1,21 +1,22 @@
 ---
 title: "Maize Phylogeny Analysis with Alignment Relabeling"
 author: "Maize Genetics Lab"
+date: "`r Sys.Date()`"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, eval = FALSE)
 ```
 
 # Maize Phylogeny Analysis Tutorial
 
-This tutorial walks through a complete workflow for processing genomic alignment data in maize, specifically focusing on:
+This tutorial walks through a complete workflow for processing maize genetic data, focusing on:
 
-1. Relabeling sequence identifiers with meaningful taxonomic names
+1. Relabeling sequence identifiers in a FASTA alignment with meaningful taxonomic labels
 2. Extracting genotype information at the I211V variant position
-3. Creating a phylogenetic tree with ancestry and genotype information
-4. Rotating the tree to position the B73 reference at the top
+3. Creating a phylogenetic tree with ancestry and variant information
+4. Rotating the tree to position the B73 reference genome at the top
 
 ## 1. Setting up the Environment
 
@@ -24,41 +25,33 @@ First, let's install and load the necessary packages:
 ```{r load_packages}
 # Install required packages if not already installed
 if (!requireNamespace("BiocManager", quietly = TRUE))
-install.packages("BiocManager")
+  install.packages("BiocManager")
 
 if (!requireNamespace("Biostrings", quietly = TRUE))
-BiocManager::install("Biostrings")
+  BiocManager::install("Biostrings")
 
 if (!requireNamespace("tidyverse", quietly = TRUE))
-install.packages("tidyverse")
+  install.packages("tidyverse")
 
-if (!requireNamespace("ape", quietly = TRUE))
-install.packages("ape")
-
-if (!requireNamespace("phangorn", quietly = TRUE))
-install.packages("phangorn")
-
-if (!requireNamespace("phytools", quietly = TRUE))
-install.packages("phytools")
-
-# Load essential packages
-library(Biostrings)# For FASTA manipulation
-library(tidyverse) # For data manipulation
-library(ape) # For phylogenetic tree operations
-library(phangorn)# For phylogenetic analysis
-library(phytools)# For tree visualization
+# Load packages
+library(Biostrings)  # For FASTA manipulation
+library(tidyverse)   # For data manipulation
 ```
 
 ## 2. Reading Input Files
 
-We need two input files:
-- A FASTA alignment file containing our sequences
-- A metadata CSV file that maps sequence IDs to meaningful taxonomic labels
+Let's set up our directory structure and read our input files:
 
 ```{r read_inputs}
-# Set file paths - adjust these to match your directory structure
-alignment_file <- "path/to/hpc1_aligned.fasta"# Replace with your path
-metadata_file <- "path/to/seqid_label.csv"# Replace with your path
+# Create a project directory if it doesn't exist
+project_dir <- "tree_plotting"
+if (!dir.exists(project_dir)) {
+  dir.create(project_dir)
+}
+
+# Set file paths within the project directory
+aln_file <- file.path(project_dir, "hpc1_aligned.fasta")
+metadata_file <- file.path(project_dir, "seqid_label.csv")
 
 # Read the mapping table with taxonomic metadata
 metadata <- read.csv(metadata_file)
@@ -67,7 +60,7 @@ metadata <- read.csv(metadata_file)
 head(metadata)
 
 # Read the FASTA alignment using Biostrings
-original_alignment <- readDNAStringSet(alignment_file)
+original_alignment <- readDNAStringSet(aln_file)
 
 # View information about the alignment
 cat("Number of sequences:", length(original_alignment), "\n")
@@ -77,102 +70,108 @@ cat("Sequence length:", width(original_alignment)[1], "bp\n")
 head(names(original_alignment))
 ```
 
-## 3. Preparing Sequence Names for Mapping
+## 3. Creating the Name Mapping Table
 
-FASTA headers often contain additional description text after the sequence ID.
-We need to clean these to match with our metadata table.
+Now we'll prepare our sequence names and map them to meaningful labels:
 
-```{r clean_sequence_names}
+```{r create_mapping}
 # Extract sequence IDs from the alignment and remove description fields
 seq_ids <- names(original_alignment)
 trimmed_ids <- gsub("\\s.*", "", seq_ids, perl=TRUE)
 
-# Reassign the cleaned names to the alignment object
+# Verify sequence ID counts match
+cat("Original sequence count:", length(original_alignment), "\n")
+cat("Trimmed IDs count:", length(trimmed_ids), "\n")
+
+# Assign the trimmed IDs to the alignment object
 names(original_alignment) <- trimmed_ids
 
 # Create a mapping dataframe that connects sequence IDs with taxonomic labels
 # We also keep track of the original order in the alignment
 name_swap <- data.frame(seqid = trimmed_ids) %>%
-mutate(aln_order = row_number()) %>%
-inner_join(metadata)
+  mutate(aln_order = row_number()) %>%
+  inner_join(metadata)
 
-# Check how many sequences were successfully mapped
-cat("Total sequences:", length(original_alignment), "\n")
-cat("Mapped sequences:", nrow(name_swap), "\n")
+# Filter to include only sequences that exist in our alignment
+name_swap <- name_swap %>%
+  dplyr::filter(seqid %in% names(original_alignment))
+
+# Report on mapping success
+cat("Sequences successfully mapped:", nrow(name_swap), "\n")
 
 # Filter the alignment to keep only sequences we have metadata for
 filtered_alignment <- original_alignment[name_swap$seqid]
 
-# Now replace the technical IDs with meaningful labels
-# (using label_3 column from metadata - adjust if your column name differs)
-names(filtered_alignment) <- name_swap$label_3
+# Now replace the technical IDs with meaningful labels from label_2 column
+names(filtered_alignment) <- name_swap$label_2
 
-# Check our newly labeled sequences
-head(names(filtered_alignment))
-```
-
-## 4. Extracting the I211V Variant Information
-
-Now let's extract the genotype at the I211V position from our alignment:
-
-```{r extract_variant}
-# First, let's trim the alignment if needed
-# In this example we're removing positions before 2226
+# Store counts for later use
 n_taxa <- length(filtered_alignment)
 n_pos <- width(filtered_alignment)[1]
 
-# Create genomic ranges for trimming
+# Examine our newly labeled sequences
+head(names(filtered_alignment))
+```
+
+## 4. Trimming the Alignment and Extracting the I211V Variant Information
+
+Next, we'll trim the alignment and identify the I211V variant position:
+
+```{r extract_variant}
+# Load GenomicRanges for efficient sequence manipulation
 library(GenomicRanges)
+
+# Define trimming ranges (starting from position 2226 to the end)
 trimmedRanges <- GRanges(
-seqnames = names(filtered_alignment),
-ranges = IRanges(
-start = rep(2226, n_taxa),# Start position (adjust as needed)
-end = rep(n_pos, n_taxa)# End at the last position
+  seqnames = names(filtered_alignment),
+  ranges = IRanges(
+    start = rep(2226, n_taxa),
+    end = rep(n_pos, n_taxa)
+  )
 )
-)
 
-# Trim the alignment
-trimmed_alignment <- filtered_alignment
+# Perform the trimming operation
+trimmed_alignment <- filtered_alignment[trimmedRanges]
 
-# Find the position of the I211V variant
-# We're looking for a specific pattern in B73 reference
-# In this case, "ATCACCCGC" is the pattern we're looking for
-I211V_B73 <- vmatchPattern("ATCACCCGC", trimmed_alignment[[1]])
 
-# Get the start position of this pattern
-I211V_start <- start(I211V_B73)
-cat("I211V variant position found at:", I211V_start, "\n")
+# Verify the trimmed alignment
+cat("Trimmed alignment length:", width(trimmed_alignment)[1], "bp\n")
+head(names(trimmed_alignment))
 
-# Create genomic ranges to extract just the variant position from each sequence
+# Find the position of the I211V variant using a specific sequence pattern
+# The pattern "ATCACCCGC" corresponds to the I211V region in the B73 reference
+I211V_B73 <- vmatchPattern("ATCACCCGC", trimmed_alignment)[[1]]
+
+# Extract the variant position for all sequences
 I211V_range <- GRanges(
-seqnames = names(filtered_alignment),
-ranges = IRanges(
-start = rep(I211V_start, n_taxa),
-end = rep(I211V_start, n_taxa)
-)
+  seqnames = names(filtered_alignment),
+  ranges = IRanges(
+    start = rep(start(I211V_B73), n_taxa),
+    end = rep(start(I211V_B73), n_taxa)
+  )
 )
 
-# Extract the nucleotide at the variant position for each sequence
+# Extract just the nucleotide at the variant position from each sequence
 I211V_aln <- trimmed_alignment[I211V_range]
 I211V_matrix <- as.matrix(I211V_aln)
 
-# Replace gap characters with NA
+# Replace gap characters with NA for cleaner data handling
 I211V_matrix[I211V_matrix == "-"] <- NA
 
-# Add the variant information to our metadata
+# Add the variant information to our metadata dataframe
 name_swap$I211V <- factor(as.vector(I211V_matrix))
 
-# View the distribution of genotypes at this position
+# Check the distribution of genotypes at this position
 table(name_swap$I211V, useNA = "ifany")
 ```
 
-## 5. Writing the Renamed Alignment to a New File
+## 5. Writing the Processed Alignment to a New File
 
-Let's save our relabeled alignment for future use:
+Let's save our relabeled and trimmed alignment:
 
 ```{r write_alignment}
 # Define output file path
-output_alignment <- "path/to/output/hpc1_nice_labels.fasta"# Replace with your path
+output_alignment <- file.path(project_dir, "hpc1_nice_labels.fasta")
 
 # Write the renamed alignment to a new file
 writeXStringSet(trimmed_alignment, output_alignment, format="fasta")
@@ -181,156 +180,166 @@ cat("Renamed alignment written to:", output_alignment, "\n")
 
 ## 6. Building a Phylogenetic Tree
 
-Now we'll build a phylogenetic tree from our alignment:
+Now we'll build and visualize a phylogenetic tree from our processed alignment:
 
 ```{r build_tree}
+# Load packages for phylogenetic analysis
+library(ape)
+library(phangorn)
+library(phytools)
+
 # Read the renamed alignment for phylogenetic analysis
 hpc1_aln <- read.dna(output_alignment, format="fasta")
 
-# Convert to phangorn's phyDat format
-hpc1_phyDat <- phyDat(hpc1_aln, type = "DNA")
+# Check labels in the alignment
+labels(hpc1_aln)
+
+# Convert to phangorn's phyDat format for phylogenetic analysis
+hpc1_phyDat <- phyDat(hpc1_aln, type = "DNA", levels = NULL)
 
 # Calculate distance matrix using JC69 model
-# Note: You could use modelTest() to find the best model
+# Note: You could use modelTest() to find the best model for your data
+# mt <- modelTest(hpc1_phyDat)
 dna_dist <- dist.ml(hpc1_phyDat, model="JC69")
 
-# Build UPGMA tree and ladderize it
+# Ensure founder ancestry is properly formatted as a factor
+# Note how we specify the order of levels to control the color scheme
+name_swap$founder_ancestry <- factor(name_swap$founder_ancestry, levels=c("Recurrent", "Donor"))
+
+# Build UPGMA tree and ladderize it for better visualization
 hpc1_UPGMA <- ladderize(upgma(dna_dist), right = FALSE)
 
-# Ensure tree tip labels match our metadata
-# We'll use label_5 for the tree (adjust if needed)
-rownames(name_swap) <- name_swap$label_5
-hpc1_UPGMA$tip.label <- name_swap$label_5
-
-# View the tree
-plot(hpc1_UPGMA, cex = 0.8)
+# Simple plot to check the tree
+plot(hpc1_UPGMA, cex = 0.7, main = "UPGMA Tree Before Rotation")
 ```
 
-## 7. Creating a Function to Rotate the Tree
+## 7. Implementing the Tree Rotation Function
 
-To position the B73 reference at the top of our tree visualization, we need a rotation function:
+To position B73 at the top of our visualization, we need a specialized rotation function:
 
-```{r rotation_function}
+```{r pivot_function}
 # Function to rotate a tree to position a specific tip at the top
-pivot_on <- function(tree, target_tip){
-# Check if the target tip exists in the tree
-if (!target_tip %in% tree$tip.label) {
-stop("Target tip '", target_tip, "' not found in the tree.")
-}
-
-# Make a copy to modify, keeping the original intact
-rotated_tree <- tree
-
-# Get the total number of tips
-ntips <- Ntip(rotated_tree)
-
-# Get the node number corresponding to the target tip
-target_tip_node <- which(rotated_tree$tip.label == target_tip)
-
-# Find the root node (typically the first internal node)
-root_node <- ntips 
-
-# Find the path from the root to the target tip
-node_path <- nodepath(rotated_tree, from = root_node, to = target_tip_node)
-
-# We only need to rotate internal nodes on the path
-internal_nodes_on_path <- node_path[node_path > ntips & node_path != root_node]
-
-# Rotate each internal node along the path if needed
-if (length(internal_nodes_on_path) > 0) {
-# Process nodes from root towards tip
-nodes_to_check <- sort(internal_nodes_on_path)
-
-for (node_to_rotate in nodes_to_check) {
-# Find the direct children of this internal node
-children <- rotated_tree$edge[rotated_tree$edge[, 1] == node_to_rotate, 2]
-
-# Bifurcating trees should have 2 children
-if (length(children) != 2) {
-warning("Node ", node_to_rotate, " is not bifurcating. Rotation might not work as expected.")
-next
-}
-
-# Find which child is on the path towards the target tip
-current_node_index <- which(node_path == node_to_rotate)
-child_on_path <- node_path[current_node_index + 1]
-
-# Rotate if the child on path is the first child
-if (child_on_path == children[1]) {
-rotated_tree <- rotate(rotated_tree, node = node_to_rotate)
-}
-}
-}
-
-return(rotated_tree)
+pivot_on <- function(x, target_tip){
+  target_tip_label <- target_tip
+  tree <- x
+  
+  # Make a copy to modify, keeping the original intact
+  rotated_tree <- tree
+  
+  # Check if the target tip exists in the tree
+  if (!target_tip_label %in% rotated_tree$tip.label) {
+    stop("Target tip '", target_tip_label, "' not found in the tree.")
+  }
+  
+  # Get the total number of tips
+  ntips <- Ntip(rotated_tree)
+  
+  # Get the node number corresponding to the target tip
+  target_tip_node <- which(rotated_tree$tip.label == target_tip_label)
+  
+  # Use a reference node to establish a path
+  # Here we're using the last tip as our reference
+  reference_node <- ntips 
+  
+  # Find the path from the reference node to our target tip
+  node_path <- nodepath(rotated_tree, from = reference_node, to = target_tip_node)
+  
+  # We only need to consider rotating internal nodes on the path
+  # Internal nodes have numbers greater than ntips
+  internal_nodes_on_path <- node_path[node_path > ntips]
+  
+  # Iterate through each node and rotate if necessary
+  if (length(internal_nodes_on_path) > 0) {
+    # Process nodes in order from root towards tip
+    nodes_to_check <- sort(internal_nodes_on_path)
+    
+    for (node_to_rotate in nodes_to_check) {
+      # Find the direct children of this internal node
+      children <- rotated_tree$edge[rotated_tree$edge[, 1] == node_to_rotate, 2]
+      
+      # Check if we have exactly two children (bifurcating tree assumption)
+      if (length(children) != 2) {
+        warning("Node ", node_to_rotate, " is not bifurcating. Rotation might not work as expected.")
+        next # Skip rotation for non-bifurcating nodes
+      }
+      
+      # Find which child is on the path towards the target tip
+      current_node_index_in_path <- which(node_path == node_to_rotate)
+      child_on_path <- node_path[current_node_index_in_path + 1]
+      
+      # If the child on the path is the first child, rotate the node
+      # This will make our target tip appear higher in the visualization
+      if (child_on_path == children[1]) {
+        rotated_tree <- rotate(rotated_tree, node = node_to_rotate)
+      }
+    }
+  }
+  
+  # Return the rotated tree
+  return(rotated_tree)
 }
 ```
 
-## 8. Applying the Rotation and Creating the Final Plot
+## 8. Applying the Rotation and Creating the Final Visualization
 
-Now we'll rotate the tree to put B73 at the top and create our final visualization:
+Now let's apply our rotation function and create the final plot:
 
-```{r final_plot}
-# Find the B73 reference tip in the tree (usually the first tip)
-b73_tip <- hpc1_UPGMA$tip.label[grep("B73", hpc1_UPGMA$tip.label)][1]
-cat("Rotating tree to put", b73_tip, "at the top\n")
+```{r final_visualization}
+# Ensure row names in our metadata match the tree's tip labels
+rownames(name_swap) <- name_swap$label_2
 
-# Apply our rotation function
-rotated_tree <- pivot_on(hpc1_UPGMA, b73_tip)
+# Rotate the tree to put the first tip (B73 reference) at the top
+out_tree <- pivot_on(hpc1_UPGMA, hpc1_UPGMA$tip.label[1])
 
-# Ensure the founder ancestry column is properly formatted
-name_swap$founder_ancestry <- factor(name_swap$founder_ancestry, c("Recurrent", "Donor"))
-
-# Create a function to generate the plot
-plot_output <- function(file, tree, data){
-# Rename for consistency
-data <- data %>% dplyr::rename(ancestry = "founder_ancestry")
-
-# Define colors for our categories
-pal <- c("gold", "purple3", "tomato", "royalblue")
-names(pal) <- c("Recurrent", "Donor", "A", "G")
-
-# Extract the columns we want to display
-X <- data[, c("ancestry", "I211V")]
-rownames(X) <- rownames(data)
-
-# Create the plot
-pdf(file = file, height = 13, width = 7)
-dotTree(tree, X, colors = pal, labels = TRUE, 
-fsize = 0.8, border = "transparent", cex.dot = 2)
-dev.off()
-
-# Return the path for convenience
-return(file)
+# Create a function to generate our visualization
+plot_output <- function(file, tree, data){ 
+  # Rename founder_ancestry column to ancestry for clarity
+  data <- data %>% dplyr::rename(ancestry = "founder_ancestry")
+  
+  # Define color palette for our categories
+  pal <- c("gold", "purple3", "tomato", "royalblue")
+  names(pal) <- c("Recurrent", "Donor", "A", "G")
+  
+  # Extract just the columns we want to visualize
+  X <- data[, c("ancestry", "I211V")]
+  rownames(X) <- rownames(data)
+  
+  # Create the phylogenetic tree with colored dots showing metadata
+  pdf(file = file, height = 13, width = 7)
+  dotTree(tree, X, colors = pal, 
+          labels = TRUE,           # Show taxon labels
+          fsize = 0.7,             # Font size
+          border = "transparent",  # No border around dots
+          cex.dot = 2)             # Size of dots
+  dev.off()
 }
 
-# Generate the plot file
-output_plot <- "path/to/output/hpc1_UPGMA_dot_tree.pdf"# Replace with your path
-plot_file <- plot_output(output_plot, rotated_tree, name_swap)
-cat("Plot saved to:", plot_file, "\n")
+# Generate the visualization
+output_plot <- file.path(project_dir, "hpc1_UPGMA_dot_tree.pdf")
+plot_output(output_plot, out_tree, name_swap)
+cat("Plot saved to:", output_plot, "\n")
 
-# Also save the tree in Newick format for future use
-output_tree <- "path/to/output/hpc1_UPGMA.tre"# Replace with your path
-write.tree(rotated_tree, file = output_tree)
+# Save the tree in Newick format for future use
+output_tree <- file.path(project_dir, "hpc1_UPGMA.tre")
+write.tree(out_tree, file = output_tree)
 cat("Tree saved to:", output_tree, "\n")
 
-# Display the tree in the current R session
-# Note: This requires a graphical device
-plot(rotated_tree, cex = 0.8, main = "Phylogenetic Tree with B73 at Top")
+# Display the tree in the current R session (if running interactively)
+plot(out_tree, main = "Rotated Tree with B73 at Top", cex = 0.7)
 ```
 
-## 9. Interactive Visualization (Optional)
+## 9. Project File Structure
 
-For an interactive view of the tree with metadata:
+Let's examine the complete file structure of our project:
 
-```{r interactive, eval=FALSE}
-# Create a simple interactive plot
-# First prepare the data
-trait_data <- name_swap[, c("founder_ancestry", "I211V")]
-rownames(trait_data) <- rownames(name_swap)
-
-# Plot with interactive elements
-plotTree.wBars(rotated_tree, trait_data)
+```{r file_structure, echo=FALSE, eval=TRUE}
+# This chunk will be evaluated when knitting
+cat("tree_plotting/\n")
+cat("├── hpc1_aligned.fasta        # Input: Original alignment file\n")
+cat("├── seqid_label.csv         # Input: Metadata mapping technical IDs to meaningful names\n")
+cat("├── hpc1_nice_labels.fasta    # Output: Alignment with renamed sequences\n")
+cat("├── hpc1_UPGMA.tre            # Output: Phylogenetic tree in Newick format\n")
+cat("└── hpc1_UPGMA_dot_tree.pdf   # Output: Visualization with ancestry and variant information\n")
 ```
 
 ## Conclusion
@@ -339,9 +348,16 @@ This tutorial demonstrated how to:
 
 1. Load and process FASTA alignment data using Biostrings
 2. Map sequence IDs to meaningful taxonomic labels
-3. Extract genotype information at a specific variant position
+3. Extract genotype information at the I211V variant position
 4. Build a phylogenetic tree using distance-based methods
-5. Rotate the tree to position a reference genome at the top
-6. Visualize the tree with metadata annotations
+5. Rotate the tree to position B73 at the top
+6. Visualize the tree with ancestry and variant information
 
 These skills are widely applicable to comparative genomics and population genetics studies in maize and other organisms.
+
+## Troubleshooting Tips
+
+- **Error finding I211V position**: If the `vmatchPattern` function fails, verify that the pattern sequence exists in your alignment. You may need to adjust the pattern or the starting position.
+- **Tree tips not matching metadata**: Ensure that the labels in your tree match exactly with the rownames in your metadata dataframe.
+- **Rotation function not working**: The rotation function assumes a bifurcating tree. If your tree has multifurcations, you may need to modify the function.
+- **Missing data in visualization**: Check for NA values in your metadata columns, especially the founder_ancestry and I211V columns.

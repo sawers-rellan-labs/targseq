@@ -52,6 +52,16 @@ Create a script called `download_references.sh`:
 #!/bin/bash
 # download_references.sh
 
+# At some point we want to camplete sequences for the following taxa:
+
+# Zd Zea diplopernnis
+# Zh Zea huhuetenagensis
+# Zl Zea luxurians
+# Zea mays spp. mays ✓
+# Zv Zea mays spp. parviglumis
+# Zx Zea mays spp. mexicana ✓
+# Td Tripsacum dactyloides ✓
+
 # Do not download databases if ref directory already exists
 
 if [ ! -d "ref" ]; then

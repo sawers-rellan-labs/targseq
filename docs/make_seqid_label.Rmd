@@ -214,7 +214,7 @@ donor_entries <- seqid_label %>%
   filter(founder_ancestry == "Donor")
 
 cat("\nDonor entries:", nrow(donor_entries), "\n")
-knitr::kable(donor_entries, caption = "Donor Entries")
+head(donor_entries)
 ```
 
 ## 7. Conclusion

@@ -11,8 +11,6 @@ output:
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, eval = FALSE)
 ```
 
-# Maize Phylogeny Analysis Tutorial
-
 This tutorial walks through a complete workflow for processing maize genetic data, focusing on:
 
 1. Relabeling sequence identifiers in a FASTA alignment with meaningful taxonomic labels

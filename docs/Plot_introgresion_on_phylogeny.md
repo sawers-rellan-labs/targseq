@@ -1,9 +1,7 @@
 Maize Phylogeny Analysis with Alignment Relabeling
 ================
 Maize Genetics Lab
-2025-04-13
-
-# Maize Phylogeny Analysis Tutorial
+2025-04-14
 
 This tutorial walks through a complete workflow for processing maize
 genetic data, focusing on:

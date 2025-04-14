@@ -13,6 +13,7 @@ knitr::opts_chunk$set(
   results = "markup",   # Show output as text
   warning = FALSE,      # Suppress warnings
   message = FALSE,      # Suppress messages
+  eval = FALSE,         # Do not run code
   fig.path = "figures/" # Store figures in 'figures' directory
 )
 ```

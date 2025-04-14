@@ -46,7 +46,7 @@ Now we'll import the data from local CSV files. Make sure to download these file
 ```{r import_data}
 
 # Create a project directory if it doesn't exist
-project_dir <- "~/Desktop/make_labels"
+project_dir <- "make_labels"
 if (!dir.exists(project_dir)) {
   dir.create(project_dir)
 }

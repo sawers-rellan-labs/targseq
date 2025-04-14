@@ -260,66 +260,18 @@ cat("\nDonor entries:", nrow(donor_entries), "\n")
     ## Donor entries: 53
 
 ``` r
-knitr::kable(donor_entries, caption = "Donor Entries")
+head(donor_entries)
 ```
 
-| seqid | founder_ancestry | ancestry_preffix | label_1 | label_2 | label_3 |
-|:---|:---|:---|:---|:---|:---|
-| hpc1_S60 | Donor | D | Bals_S60 | D_Zv_Bals_0120_S60 | Zv_Bals_0120_S60 |
-| hpc1_S50 | Donor | D | Bals_S50 | D_Zv_Bals_0060_S50 | Zv_Bals_0060_S50 |
-| hpc1_S47 | Donor | D | Zlux_S47 | D_Zl_Zlux_0040_S47 | Zl_Zlux_0040_S47 |
-| hpc1_S59 | Donor | D | Bals_S59 | D_Zv_Bals_0290_S59 | Zv_Bals_0290_S59 |
-| hpc1_S55 | Donor | D | Bals_S55 | D_Zv_Bals_0420_S55 | Zv_Bals_0420_S55 |
-| hpc1_S62 | Donor | D | Bals_S62 | D_Zv_Bals_0260_S62 | Zv_Bals_0260_S62 |
-| hpc1_S1 | Donor | D | Chal_S1 | D_Zx_Chal_0160_S1 | Zx_Chal_0160_S1 |
-| hpc1_S84 | Donor | D | Mesa_S84 | D_Zx_Mesa_0360_S84 | Zx_Mesa_0360_S84 |
-| hpc1_S78 | Donor | D | Mesa_S78 | D_Zx_Mesa_0520_S78 | Zx_Mesa_0520_S78 |
-| hpc1_S14 | Donor | D | Chal_S14 | D_Zx_Chal_0030_S14 | Zx_Chal_0030_S14 |
-| hpc1_S22 | Donor | D | Dura_S22 | D_Zx_Dura_0550_S22 | Zx_Dura_0550_S22 |
-| hpc1_S80 | Donor | D | Mesa_S80 | D_Zx_Mesa_0490_S80 | Zx_Mesa_0490_S80 |
-| hpc1_S21 | Donor | D | Dura_S21 | D_Zx_Dura_0560_S21 | Zx_Dura_0560_S21 |
-| hpc1_S85 | Donor | D | Bals_S85 | D_Zv_Bals_0150_S85 | Zv_Bals_0150_S85 |
-| hpc1_S23 | Donor | D | Mesa_S23 | D_Zx_Mesa_0440_S23 | Zx_Mesa_0440_S23 |
-| hpc1_S30 | Donor | D | Zdip_S30 | D_Zd_Zdip_0040_S30 | Zd_Zdip_0040_S30 |
-| hpc1_S94 | Donor | D | Mesa_S94 | D_Zx_Mesa_0430_S94 | Zx_Mesa_0430_S94 |
-| hpc1_S36 | Donor | D | Zlux_S36 | D_Zl_Zlux_0050_S36 | Zl_Zlux_0050_S36 |
-| hpc1_S31 | Donor | D | Nobo_S31 | D_Zx_Nobo_0580_S31 | Zx_Nobo_0580_S31 |
-| hpc1_S2 | Donor | D | Chal_S2 | D_Zx_Chal_0160_S2 | Zx_Chal_0160_S2 |
-| hpc1_S19 | Donor | D | Dura_S19 | D_Zx_Dura_0550_S19 | Zx_Dura_0550_S19 |
-| hpc1_S28 | Donor | D | Zdip_S28 | D_Zd_Zdip_0030_S28 | Zd_Zdip_0030_S28 |
-| hpc1_S37 | Donor | D | Hueh_S37 | D_Zh_Hueh_0030_S37 | Zh_Hueh_0030_S37 |
-| hpc1_S41 | Donor | D | Zlux_S41 | D_Zl_Zlux_0020_S41 | Zl_Zlux_0020_S41 |
-| hpc1_S52 | Donor | D | Bals_S52 | D_Zv_Bals_0340_S52 | Zv_Bals_0340_S52 |
-| hpc1_S48 | Donor | D | Bals_S48 | D_Zv_Bals_0370_S48 | Zv_Bals_0370_S48 |
-| hpc1_S79 | Donor | D | Bals_S79 | D_Zv_Bals_0480_S79 | Zv_Bals_0480_S79 |
-| hpc1_S81 | Donor | D | Mesa_S81 | D_Zx_Mesa_0360_S81 | Zx_Mesa_0360_S81 |
-| hpc1_S93 | Donor | D | Mesa_S93 | D_Zx_Mesa_0510_S93 | Zx_Mesa_0510_S93 |
-| hpc1_S73 | Donor | D | Zdip_S73 | D_Zd_Zdip_0010_S73 | Zd_Zdip_0010_S73 |
-| hpc1_S75 | Donor | D | Bals_S75 | D_Zv_Bals_0310_S75 | Zv_Bals_0310_S75 |
-| hpc1_S88 | Donor | D | Mesa_S88 | D_Zx_Mesa_0470_S88 | Zx_Mesa_0470_S88 |
-| hpc1_S86 | Donor | D | Mesa_S86 | D_Zx_Mesa_0380_S86 | Zx_Mesa_0380_S86 |
-| hpc1_S17 | Donor | D | Dura_S17 | D_Zx_Dura_0560_S17 | Zx_Dura_0560_S17 |
-| hpc1_S38 | Donor | D | Hueh_S38 | D_Zh_Hueh_0020_S38 | Zh_Hueh_0020_S38 |
-| hpc1_S25 | Donor | D | Dura_S25 | D_Zx_Dura_0540_S25 | Zx_Dura_0540_S25 |
-| hpc1_S95 | Donor | D | Mesa_S95 | D_Zx_Mesa_0400_S95 | Zx_Mesa_0400_S95 |
-| hpc1_S67 | Donor | D | Zdip_S67 | D_Zd_Zdip_0020_S67 | Zd_Zdip_0020_S67 |
-| hpc1_S9 | Donor | D | Chal_S9 | D_Zx_Chal_0140_S9 | Zx_Chal_0140_S9 |
-| hpc1_S6 | Donor | D | Chal_S6 | D_Zx_Chal_0190_S6 | Zx_Chal_0190_S6 |
-| hpc1_S10 | Donor | D | Chal_S10 | D_Zx_Chal_0340_S10 | Zx_Chal_0340_S10 |
-| hpc1_S89 | Donor | D | Mesa_S89 | D_Zx_Mesa_0350_S89 | Zx_Mesa_0350_S89 |
-| hpc1_S8 | Donor | D | Chal_S8 | D_Zx_Chal_0090_S8 | Zx_Chal_0090_S8 |
-| hpc1_S15 | Donor | D | Mesa_S15 | D_Zx_Mesa_0500_S15 | Zx_Mesa_0500_S15 |
-| hpc1_S32 | Donor | D | Nobo_S32 | D_Zx_Nobo_0570_S32 | Zx_Nobo_0570_S32 |
-| hpc1_S83 | Donor | D | Bals_S83 | D_Zv_Bals_0470_S83 | Zv_Bals_0470_S83 |
-| hpc1_S96 | Donor | D | Mesa_S96 | D_Zx_Mesa_0390_S96 | Zx_Mesa_0390_S96 |
-| hpc1_S63 | Donor | D | Bals_S63 | D_Zv_Bals_0140_S63 | Zv_Bals_0140_S63 |
-| hpc1_S43 | Donor | D | Bals_S43 | D_Zv_Bals_0030_S43 | Zv_Bals_0030_S43 |
-| hpc1_S64 | Donor | D | Bals_S64 | D_Zv_Bals_0220_S64 | Zv_Bals_0220_S64 |
-| hpc1_S77 | Donor | D | Bals_S77 | D_Zv_Bals_0250_S77 | Zv_Bals_0250_S77 |
-| hpc1_S92 | Donor | D | Mesa_S92 | D_Zx_Mesa_0450_S92 | Zx_Mesa_0450_S92 |
-| hpc1_TIL18 | Donor | D | TIL18 | D_Zx_TIL18 | Zx_TIL18 |
-
-Donor Entries
+    ## # A tibble: 6 × 6
+    ##   seqid    founder_ancestry ancestry_preffix label_1  label_2            label_3
+    ##   <chr>    <chr>            <chr>            <chr>    <chr>              <chr>  
+    ## 1 hpc1_S60 Donor            D                Bals_S60 D_Zv_Bals_0120_S60 Zv_Bal…
+    ## 2 hpc1_S50 Donor            D                Bals_S50 D_Zv_Bals_0060_S50 Zv_Bal…
+    ## 3 hpc1_S47 Donor            D                Zlux_S47 D_Zl_Zlux_0040_S47 Zl_Zlu…
+    ## 4 hpc1_S59 Donor            D                Bals_S59 D_Zv_Bals_0290_S59 Zv_Bal…
+    ## 5 hpc1_S55 Donor            D                Bals_S55 D_Zv_Bals_0420_S55 Zv_Bal…
+    ## 6 hpc1_S62 Donor            D                Bals_S62 D_Zv_Bals_0260_S62 Zv_Bal…
 
 ## 7. Conclusion
 

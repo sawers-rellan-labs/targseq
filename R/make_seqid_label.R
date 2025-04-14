@@ -2,6 +2,7 @@ library(dplyr)
 
 #data from
 # https://docs.google.com/spreadsheets/d/1gsZ017XvS_xLZkXzBmKT7e4DL5aiEld8AcxfeJ2KNwc/edit?gid=1345415053#gid=1345415053&fvid=1451101345
+
 line_info <- read_csv("~/Desktop/FINAL_SELECTION.csv")
 sample_annotation <- read_csv("~/Desktop/sample_annotation.csv")
 

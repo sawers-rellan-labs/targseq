@@ -54,7 +54,7 @@ Create a script called `download_references.sh`:
 
 # At some point we want to complete sequences for the following taxa:
 
-# Zd Zea diplopernnis
+# Zd Zea diploperennis
 # Zh Zea huhuetenagensis
 # Zl Zea luxurians
 # Zm Zea mays spp. mays ✓
@@ -193,9 +193,8 @@ Create a script called `identify_orthologs.sh`:
 #!/bin/bash
 # identify_orthologs.sh
 
-
 # At some point we want to have all these taxa:
-# Zd Zea diplopernnis
+# Zd Zea diploperennis
 # Zh Zea huhuetenagensis
 # Zl Zea luxurians
 # Zm Zea mays spp. mays ✓

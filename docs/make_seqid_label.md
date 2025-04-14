@@ -3,14 +3,12 @@ Maize Genetics: Sequence ID Processing and Labeling Tutorial
 Your Name
 2025-04-14
 
-# Maize Genetics: Sequence ID Processing and Labeling
+## 1. Introduction
 
 This tutorial walks through the process of creating standardized
 sequence IDs for maize genetic data. We’ll import data from Google
 Sheets, process it to create various label formats, and export the
 results to a CSV file.
-
-## 1. Introduction
 
 Consistent labeling of sequence IDs is crucial for genetic data
 analysis, especially when working with introgression lines or
@@ -220,7 +218,7 @@ cat("Sequence ID table successfully created and saved to:", output_file, "\n")
 
     make_labels/
     ├── FINAL_SELECTION.csv
-    └── sample_annotation.csv
+    ├── sample_annotation.csv
     └── seqid_label.csv
 
 ## 6. Data Exploration and Analysis

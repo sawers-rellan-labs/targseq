@@ -37,20 +37,20 @@ GitHub is a web-based hosting service for Git repositories, offering collaborati
 
 Git is a version control system that tracks changes in your code over time. Install Git based on your operating system:
   
-  **For Windows users:**
-  ```{r install-git-windows, eval=FALSE}
+**For Windows users:**
+```{r install-git-windows, eval=FALSE}
 # Download and install from:
 browseURL("https://git-scm.com/download/win")
 ```
 
 **For Mac users:**
-  ```{r install-git-mac, eval=FALSE}
+```{r install-git-mac, eval=FALSE}
 # Download and install from:
 browseURL("https://git-scm.com/download/mac")
 ```
 
 **For Linux users:**
-  ```{r install-git-linux, eval=FALSE}
+```{r install-git-linux, eval=FALSE}
 # Download and install from:
 browseURL("https://git-scm.com/download/linux")
 
@@ -103,7 +103,7 @@ Follow the prompts on GitHub to generate your token. Make sure to:
 
 Linux users may want to extend the credential cache timeout:
   
-  ```{r linux-cache, eval=FALSE}
+```{r linux-cache, eval=FALSE}
 # Set cache timeout to approximately 30 days
 usethis::use_git_config(credential.helper = "cache --timeout=2600000")
 ```
@@ -112,9 +112,9 @@ usethis::use_git_config(credential.helper = "cache --timeout=2600000")
 
 There are two ways to store your PAT:
   
-  **Option 1:** Using the credentials package:
+**Option 1:** Using the credentials package:
   
-  ```{r store-pat-1, eval=FALSE}
+```{r store-pat-1, eval=FALSE}
 # Install credentials if needed
 if (!requireNamespace("credentials", quietly = TRUE)) {
   install.packages("credentials")
@@ -126,7 +126,7 @@ credentials::set_github_pat("YourPAT")
 
 **Option 2:** Store in your `.Renviron` file:
   
-  ```{r store-pat-2, eval=FALSE}
+```{r store-pat-2, eval=FALSE}
 # Open .Renviron file
 usethis::edit_r_environ()
 
@@ -139,7 +139,7 @@ usethis::edit_r_environ()
 
 After configuring Git, restart your R session:
   
-  ```{r restart, eval=FALSE}
+```{r restart, eval=FALSE}
 # You can use this function:
 .rs.restartR()
 
@@ -150,7 +150,7 @@ After configuring Git, restart your R session:
 
 Check that everything is configured correctly:
   
-  ```{r verify, eval=FALSE}
+```{r verify, eval=FALSE}
 # Check Git configuration
 usethis::git_sitrep()
 ```

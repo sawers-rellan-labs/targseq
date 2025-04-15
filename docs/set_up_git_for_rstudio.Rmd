@@ -182,7 +182,7 @@ Now that you've set up Git and GitHub with R:
 ## References
 
 - Gist for  [Configure GitHub for Rstudio](https://gist.github.com/Z3tt/3dab3535007acf108391649766409421)
-- Shor video plalist for [How to Use Git/GitHub with R] (https://www.youtube.com/watch?v=k-57UBYnRvw&list=PLSviU861UtD81AuyYb3SbndmAA_qTCoLe)
+- Short video playlist for [How to Use Git/GitHub with R] (https://www.youtube.com/watch?v=k-57UBYnRvw&list=PLSviU861UtD81AuyYb3SbndmAA_qTCoLe)
 - [Happy Git with R](https://happygitwithr.com/)
 - [usethis package documentation](https://usethis.r-lib.org/)
 - [GitHub documentation](https://docs.github.com/)

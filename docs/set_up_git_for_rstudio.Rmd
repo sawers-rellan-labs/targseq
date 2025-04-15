@@ -156,7 +156,7 @@ usethis::git_sitrep()
 ```
 
 Your output should include:
-  - Your correct username and email
+- Your correct username and email
 - Confirmation that your PAT was found (`Personal access token: '<found in env var>'`)
 
 If you see any errors, carefully read the output for troubleshooting guidance.
@@ -165,7 +165,7 @@ If you see any errors, carefully read the output for troubleshooting guidance.
 
 If you encounter issues:
   
-  1. **PAT not found**: Edit your `.Renviron` file manually with `usethis::edit_r_environ()` and ensure your token is stored correctly as `GITHUB_PAT=your_token_here`.
+1. **PAT not found**: Edit your `.Renviron` file manually with `usethis::edit_r_environ()` and ensure your token is stored correctly as `GITHUB_PAT=your_token_here`.
 
 2. **Git not detected**: Make sure Git is installed and restart RStudio.
 

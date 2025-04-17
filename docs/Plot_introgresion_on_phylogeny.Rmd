@@ -445,7 +445,7 @@ out_tree <- pivot_on(hpc1_UPGMA, hpc1_UPGMA$tip.label[1])
 
 # Add multiple alignment overview
 
-  p <- ggtree(out_tree,) + geom_tiplab(size=3)
+  p <- ggtree(out_tree,ladderize = FALSE) + geom_tiplab(size=3)
   p2 <- msaplot(p, fasta = file.path(project_dir,"hpc1_nice_labels.fasta"), offset=0.05, width=0.6)+
           theme(legend.position = "none")
   ggsave(p2, file= file.path(project_dir,"hpc1_tree_alignment.png"), height=12, width=7, units = "in")
@@ -544,6 +544,9 @@ donor_alignment_file <- file.path(project_dir, "hpc1_donor_subset.fasta")
 writeXStringSet(donor_alignment, donor_alignment_file, format="fasta")
 cat("Donor subset alignment written to:", donor_alignment_file, "\n")
 
+
+
+  
 # Build a new tree for the donor subset
 donor_aln <- read.dna(donor_alignment_file, format="fasta")
 donor_phyDat <- phyDat(donor_aln, type = "DNA", levels = NULL)
@@ -551,13 +554,20 @@ donor_dist <- dist.ml(donor_phyDat, model="JC69")
 donor_UPGMA <- ladderize(upgma(donor_dist), right = FALSE)
 
 # Rotate the donor tree to put B73 at the top
-donor_tree <- pivot_on(donor_UPGMA, b73_label)
+donor_tree <- pivot_on(donor_UPGMA, b73_label) 
 
 # Save the donor subset tree
 donor_tree_file <- file.path(project_dir, "hpc1_donor_subset.tre")
 write.tree(donor_tree, file = donor_tree_file)
 cat("Donor subset tree saved to:", donor_tree_file, "\n")
 
+# addd multiple alignment
+
+p <- ggtree(donor_tree,ladderize = FALSE) + geom_tiplab(size=3)
+p2 <- msaplot(p, fasta = donor_alignment_file, offset=0.05, width=0.6)+
+        theme(legend.position = "none")
+ggsave(p2, file= file.path(project_dir,"hpc1_donor_tree_alignment.png"), height=12, width=7, units = "in")
+  
 # Assuming you already have:
 # 1. Your tree object (e.g., out_tree or donor_tree)
 # 2. Your data with variant information (variants_ref_alt or donor_ref_alt)

@@ -454,7 +454,6 @@ p <- ggtree(out_tree, ladderize = FALSE) +
 p2 <- msaplot(p, fasta = file.path(project_dir, "hpc1_nice_labels.fasta"), 
               offset = 0.05, width = 0.6) +
       theme(legend.position = "none")
-
 # Save the tree with alignment visualization
 ggsave(p2, file = file.path(project_dir, "hpc1_tree_alignment.png"), 
        height = 12, width = 7, units = "in")
@@ -482,8 +481,8 @@ create_variant_heatmap_tree <- function(tree, data, output_file, width = 7, heig
   # Add descriptive titles to the plot
   p <- p + labs(title = "Maize Phylogeny with Variant Information",
                 subtitle = "REF and ALT alleles at A204T and I211V positions")
-  
-  # Return the plot object
+  # Return the plot object for display in R
+
   return(p)
 }
 
@@ -520,6 +519,7 @@ variant_data$I211V <- factor(variant_data$I211V, levels = c("REF", "ALT"))
 # Generate and save the heatmap visualization for all samples
 output_heatmap <- file.path(project_dir, "hpc1_all_samples_tre.pdf")
 variant_heatmap <- create_variant_heatmap_tree(out_tree, variant_data, output_heatmap)
+# Add multiple alignment overview
 
 # Create a combination plot with both the tree+heatmap and alignment visualization
 p2 <- msaplot(variant_heatmap, 

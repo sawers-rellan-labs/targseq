@@ -268,6 +268,7 @@ plot(hpc1_UPGMA, cex = 0.7, main = "UPGMA Tree Before Rotation")
 To position B73 at the top of our visualization, we need a specialized rotation function:
 
 ```{r pivot_function}
+
 flip_tree <- function(tree){
 # this function will reverse the tree plotting order
 # by reversing the edges
@@ -384,78 +385,121 @@ pivot_on <- function(tree, target_tip) {
 }
 ```
 
-## 10. Applying the Rotation and Creating Visualizations for Each Variant
+# Steps 10-11: Visualization with ggtree
 
-Now let's apply our rotation function and create plots for each variant:
+Let's reimagine our visualization approach using ggtree, which provides more modern and flexible tree visualization capabilities. We'll replace steps 10 and 11 from our previous workflow with ggtree-based alternatives.
 
-```{r final_visualizations}
+## Installing and Loading Required Packages
+
+First, we need to install and load the ggtree package and its dependencies:
+
+```{r ggtree_setup}
+# Install required packages if not already installed
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+if (!requireNamespace("ggtree", quietly = TRUE))
+  BiocManager::install("ggtree")
+
+if (!requireNamespace("ggplot2", quietly = TRUE))
+  install.packages("ggplot2")
+
+if (!requireNamespace("ggnewscale", quietly = TRUE))
+  install.packages("ggnewscale")
+
+# Load packages
+library(ggtree)     # For tree visualization
+library(ggplot2)    # For plotting
+library(ggnewscale) # For multiple color scales in the same plot
+library(dplyr)      # For data manipulation
+```
+
+## 10. Visualizing the Full Tree with ggtree
+
+Now let's apply our rotation function and create plots using ggtree:
+
+```{r ggtree_full_visualization}
 # Ensure row names in our metadata match the tree's tip labels
 rownames(name_swap) <- name_swap$label_2
 
 # Rotate the tree to put the first tip (B73 reference) at the top
-out_tree <- pivot_on(hpc1_UPGMA, hpc1_UPGMA$tip.label[1])
+out_tree <- pivot_on(hpc1_UPGMA, hpc1_UPGMA$tip.label[1]) 
 
-# Create a function to generate our visualization with multiple variant columns
-plot_output <- function(file, tree, data, 
-                        columns="ancestry",
-                        # Define color palette for our categories
-                        pal = c(Recurrent="gold",  Donor="purple3",
-                                 A="tomato",G="royalblue" ,C="forestgreen",T="orange")){ 
-  # Rename founder_ancestry column to ancestry for clarity
-  data <- data %>% dplyr::rename(ancestry = "founder_ancestry")
-  # Extract columns to visualize: ancestry and specified variants
-  X <- data[, columns]
-  rownames(X) <- rownames(data)
+
+create_variant_heatmap_tree <- function(tree, data, output_file, width = 7, height = 12) {
+  # Prepare data for heatmap - focusing only on the variant states
+  heatmap_data <- data 
+ # rownames(heatmap_data) <- data$label_2
   
-  # Create the phylogenetic tree with colored dots showing metadata
-  pdf(file = file, height = 13, width = 7)
-  dotTree(tree, X, colors = pal, 
-          labels = TRUE,           # Show taxon labels
-          fsize = 0.7,             # Font size
-          border = "transparent",  # No border around dots
-          cex.dot = 2)             # Size of dots
-  dev.off()
+  # Define color palette for REF/ALT
+  ref_alt_colors <- c("REF" = "tomato", "ALT" = "royalblue")
+  
+  # Create base tree
+  p <- ggtree(tree, ladderize=FALSE) + 
+    geom_tiplab(size = 2.5, hjust = -0.05) +
+     ggtree::vexpand(.1, 1) +
+    theme_tree2()
+  
+  # Add heatmap alongside the tree
+  p <- gheatmap(p, heatmap_data, offset = 0.03, width = 0.2, 
+                colnames = TRUE, colnames_angle = 45, colnames_offset_y = 0.6, hjust = 0,
+                colnames_position = "top",) +
+    scale_fill_manual(values = ref_alt_colors, name = "State") 
+  
+  # Add titles
+  p <- p + labs(title = "Maize Phylogeny with Variant Information",
+                subtitle = "REF and ALT alleles at A204T and I211V positions")
+  
+  # Save the plot to a file
+  ggsave(output_file, p, width = width, height = height)
+  
+  # Return the plot object for display in R
+  return(p)
 }
 
-# Generate visualizations for different variant combinations
-# 1. Plot with both variants by nucleotide
-output_plot_both <- file.path(project_dir, "hpc1_UPGMA_both_variants.pdf")
+# Assuming you already have:
+# 1. Your tree object (e.g., out_tree or donor_tree)
+# 2. Your data with variant information (variants_ref_alt or donor_ref_alt)
 
-plot_output(
-  output_plot_both,
-  out_tree,
-  name_swap,
-  columns = c("ancestry", "A204T", "I211V"))
+# First, ensure your variant data has the correct REF/ALT coding
+# For example:
+variant_data <- name_swap %>%
+  mutate(
+      ancestry_call = case_when(
+      founder_ancestry == "Recurrent" ~ "REF",
+      founder_ancestry  == "Donor" ~ "ALT",
+      TRUE ~ as.character(A204T) 
+    ),
+    A204T_state = case_when(
+      A204T == "A" ~ "ALT",
+      A204T == "G" ~ "REF",
+      TRUE ~ as.character(A204T)
+    ),
+    I211V_state = case_when(
+      I211V == "G" ~ "ALT",
+      I211V == "A" ~ "REF",
+      TRUE ~ as.character(I211V)
+    )
+  )  %>%   
+ select(ancestry= ancestry_call, A204T=A204T_state, I211V=I211V_state)
 
-cat("Plot with both variants saved to:", output_plot_both, "\n")
 
-# 2. Plot just the variants with REF/ALT classification 
+# Convert state columns to factors
+variant_data$ancestry <- factor(variant_data$ancestry, levels = c("REF","ALT"))
+variant_data$A204T <- factor(variant_data$A204T, levels = c("REF","ALT"))
+variant_data$I211V <- factor(variant_data$I211V, levels = c("REF","ALT"))
 
-by_ref <- name_swap
+# Generate and save the heatmap visualization
+output_heatmap <- file.path(project_dir,"hpc1_donor_variants.pdf")
+variant_heatmap <- create_variant_heatmap_tree(out_tree, variant_data, output_heatmap)
 
-by_ref$A204T <- c(G="ALT",A="REF")[by_ref$A204T]
-
-by_ref$I211V <- c(G="REF",A="ALT")[by_ref$I211V]
-
-pal_ref <- c(REF="tomato",  ALT="royalblue")
-
-output_plot_alt_ref <- file.path(project_dir, "hpc1_UPGMA_alt_ref_variants.pdf")
-
-plot_output(
-  output_plot_alt_ref,
-  out_tree,
-  by_ref,
-  columns = c("A204T", "I211V"),
-  pal= pal_ref )
-
-# Display the tree in the current R session (if running interactively)
-plot(out_tree, main = "Rotated Tree with B73 at Top", cex = 0.7)
 ```
-## 11. Subsetting Alignment and Tree to Donor Ancestry and B73
 
-Now, let's create a subset analysis focusing only on taxa with donor ancestry plus the B73 reference:
+## 11. Subsetting and Visualizing Donor Taxa with ggtree
 
-```{r subset_analysis}
+Now we'll create a subset analysis focusing only on taxa with donor ancestry plus the B73 reference:
+
+```{r ggtree_subset_visualization}
 # First, identify B73 in our dataset
 b73_label <- grep("B73", name_swap$label_2, value = TRUE)[1]
 cat("B73 reference identified as:", b73_label, "\n")
@@ -482,100 +526,118 @@ donor_dist <- dist.ml(donor_phyDat, model="JC69")
 donor_UPGMA <- ladderize(upgma(donor_dist), right = FALSE)
 
 # Rotate the donor tree to put B73 at the top
-donor_tree <- pivot_on(donor_UPGMA, target_tip = b73_label)
-
-# Plot the donor tree to check
-plot(donor_tree, cex = 0.8, main = "Donor Subset Tree with B73 at Top")
-
-# Prepare REF/ALT variant data for the donor subset
-donor_variants <- donor_subset %>%
-  select(label_2, A204T, I211V, founder_ancestry)
-
-# Make sure rownames are set correctly
-rownames(donor_variants) <- donor_variants$label_2
-
-# Create REF/ALT coding for the donor subset
-donor_ref_alt <- donor_variants
-
-# Recode A204T: A is REF, G is ALT
-donor_ref_alt$A204T <- as.character(donor_ref_alt$A204T)
-donor_ref_alt$A204T[donor_ref_alt$A204T == "A"] <- "REF"
-donor_ref_alt$A204T[donor_ref_alt$A204T == "G"] <- "ALT"
-donor_ref_alt$A204T <- factor(donor_ref_alt$A204T)
-
-# Recode I211V: G is REF, A is ALT
-donor_ref_alt$I211V <- as.character(donor_ref_alt$I211V)
-donor_ref_alt$I211V[donor_ref_alt$I211V == "G"] <- "REF"
-donor_ref_alt$I211V[donor_ref_alt$I211V == "A"] <- "ALT"
-donor_ref_alt$I211V <- factor(donor_ref_alt$I211V)
-
-# Generate visualization for the donor subset with REF/ALT coding
-donor_plot_file <- file.path(project_dir, "hpc1_donor_subset_ref_alt.pdf")
-
-plot_output(
-  donor_plot_file,
-  donor_tree,
-  donor_ref_alt,
-  columns = c("A204T", "I211V"),  # Only show variant information (no ancestry since all are Donor)
-  pal = c(REF="tomato", ALT="royalblue"))
-
-cat("Donor subset plot with REF/ALT variants saved to:", donor_plot_file, "\n")
-
-# Additional visualization showing both nucleotide and ancestry
-donor_plot_nucleotide <- file.path(project_dir, "hpc1_donor_subset_nucleotide.pdf")
-
-plot_output(
-  donor_plot_nucleotide,
-  donor_tree,
-  donor_variants,
-  columns = c("ancestry", "A204T", "I211V"),
-  pal = c(Recurrent="gold", Donor="purple3", A="tomato", G="royalblue", C="forestgreen", T="orange"))
-
-cat("Donor subset plot with nucleotide variants saved to:", donor_plot_nucleotide, "\n")
+donor_tree <- pivot_on(donor_UPGMA, b73_label)
 
 # Save the donor subset tree
 donor_tree_file <- file.path(project_dir, "hpc1_donor_subset.tre")
 write.tree(donor_tree, file = donor_tree_file)
 cat("Donor subset tree saved to:", donor_tree_file, "\n")
-```
-## 12. Project File Structure
 
-Let's examine the complete file structure of our project:
+# Assuming you already have:
+# 1. Your tree object (e.g., out_tree or donor_tree)
+# 2. Your data with variant information (variants_ref_alt or donor_ref_alt)
+
+# First, ensure your variant data has the correct REF/ALT coding
+# For example:
+variant_data <- name_swap[donor_subset$label_2,] %>%
+  mutate(
+      ancestry_call = case_when(
+      founder_ancestry == "Recurrent" ~ "REF",
+      founder_ancestry  == "Donor" ~ "ALT",
+      TRUE ~ as.character(A204T) 
+    ),
+    A204T_state = case_when(
+      A204T == "A" ~ "ALT",
+      A204T == "G" ~ "REF",
+      TRUE ~ as.character(A204T)
+    ),
+    I211V_state = case_when(
+      I211V == "G" ~ "ALT",
+      I211V == "A" ~ "REF",
+      TRUE ~ as.character(I211V)
+    )
+  )  %>%   
+ select(ancestry= ancestry_call, A204T=A204T_state, I211V=I211V_state)
+
+
+# Convert state columns to factors
+variant_data$ancestry <- factor(variant_data$ancestry, levels = c("REF","ALT"))
+variant_data$A204T <- factor(variant_data$A204T, levels = c("REF","ALT"))
+variant_data$I211V <- factor(variant_data$I211V, levels = c("REF","ALT"))
+
+# Generate and save the heatmap visualization
+output_heatmap <- file.path(project_dir,"hpc1_donor_subset_variants.pdf")
+variant_heatmap <- create_variant_heatmap_tree(donor_tree, variant_data, output_heatmap)
+
+```
+
+## 12. Project File Structure with ggtree Outputs
+
+Let's examine the updated file structure with our ggtree outputs:
 
 ```{r file_structure, echo=FALSE, eval=TRUE}
 # This chunk will be evaluated when knitting
 cat("tree_plotting/\n")
 cat("├── hpc1_aligned.fasta              # Input: Original alignment file\n")
-cat("├── seqid_label.csv                 # Input: Metadata mapping technical IDs to meaningful names\n")
+cat("├── seqid_label.csv                 # Input: Metadata mapping file\n")
 cat("├── hpc1_nice_labels.fasta          # Output: Alignment with renamed sequences\n")
 cat("├── hpc1_UPGMA.tre                  # Output: Phylogenetic tree in Newick format\n")
-cat("├── hpc1_UPGMA_both_variants.pdf    # Output: Visualization with both variants as nucleotides\n")
-cat("├── hpc1_UPGMA_alt_ref_variants.pdf # Output: Visualization with variants as REF/ALT\n")
-cat("├── hpc1_donor_subset.fasta         # Output: Alignment with only donor taxa and B73\n")
-cat("├── hpc1_donor_subset.tre           # Output: Tree with only donor taxa and B73\n")
-cat("├── hpc1_donor_subset_ref_alt.pdf   # Output: Donor subset visualization with REF/ALT\n")
-cat("└── hpc1_donor_subset_nucleotide.pdf # Output: Donor subset with nucleotide variants\n")
+cat("│\n")
+cat("├── Previous visualization outputs\n")
+cat("│   ├── hpc1_UPGMA_both_variants.pdf    # Original visualization with both variants\n")
+cat("│   ├── hpc1_UPGMA_alt_ref_variants.pdf # Original visualization with REF/ALT\n")
+cat("│   ├── hpc1_donor_subset.fasta         # Alignment with donor taxa and B73\n")
+cat("│   ├── hpc1_donor_subset.tre           # Tree with donor taxa and B73\n")
+cat("│   └── hpc1_donor_subset_ref_alt.pdf   # Original donor subset visualization\n")
+cat("│\n")
+cat("└── ggtree visualization outputs\n")
+cat("    ├── ggtree_nucleotide_variants.pdf  # Full tree with nucleotide variants\n")
+cat("    ├── ggtree_nucleotide_variants.png  # PNG version\n")
+cat("    ├── ggtree_ref_alt_variants.pdf     # Full tree with REF/ALT variants\n")
+cat("    ├── ggtree_ref_alt_variants.png     # PNG version\n")
+cat("    ├── ggtree_donor_subset.pdf         # Donor subset rectangular tree\n")
+cat("    ├── ggtree_donor_subset.png         # PNG version\n")
+cat("    ├── ggtree_donor_circular.pdf       # Donor subset circular tree\n")
+cat("    ├── ggtree_donor_circular.png       # PNG version\n")
+cat("    ├── ggtree_donor_heatmap.pdf        # Donor subset with variant heatmap\n")
+cat("    └── ggtree_donor_heatmap.png        # PNG version\n")
 ```
 
-## 13. Conclusion
+## 13. Advantages of ggtree Over Base R Plotting
 
-This tutorial demonstrated how to:
+The ggtree package offers several advantages over base R plotting functions for phylogenetic trees:
 
-1. Load and process FASTA alignment data using Biostrings
-2. Map sequence IDs to meaningful taxonomic labels
-3. Create a reusable function to extract multiple variant positions (I211V and A204T)
-4. Build a phylogenetic tree using distance-based methods
-5. Rotate the tree to position B73 at the top
-6. Create visualizations showing the distribution of different variants across the phylogeny
-7. Subset the data to focus on taxa with donor ancestry plus B73 reference
-8. Generate specialized visualizations using REF/ALT genotype coding
+1. **Grammar of Graphics Approach**: Uses the familiar ggplot2 syntax for consistent and extensible visualizations.
 
-These skills are widely applicable to comparative genomics and population genetics studies in maize and other organisms.
+2. **Layered Visualizations**: Easily add multiple data layers (geom_tippoint, geom_hilight, etc.) to the tree.
 
-## 14. Troubleshooting Tips
+3. **Multiple Tree Layouts**: Supports rectangular, circular, fan, and other tree layouts without rewriting code.
 
-- **Pattern not found error**: If the `vmatchPattern` function fails, verify that the pattern sequence exists in your alignment. You may need to adjust the pattern or check for sequencing errors.
-- **Tree tips not matching metadata**: Ensure that the labels in your tree match exactly with the rownames in your metadata dataframe.
-- **Rotation function not working**: The rotation function assumes a bifurcating tree. If your tree has multifurcations, you may need to modify the function.
-- **Missing data in visualization**: Check for NA values in your metadata columns, especially the founder_ancestry and variant columns.
-- **Subset analysis issues**: If the subset analysis fails, verify that there are enough sequences in the subset to build a meaningful tree (at least 4 sequences are recommended).
+4. **Integration with Other Data**: The `%<+%` operator makes it easy to map external data onto the tree.
+
+5. **Publication-Ready Figures**: Creates high-quality vector graphics with customizable aesthetics.
+
+6. **Highlighting and Annotation**: Easily highlight specific clades or nodes of interest.
+
+7. **Multiple Output Formats**: Compatible with all ggplot2 output formats (PDF, PNG, SVG, etc.).
+
+8. **Heatmap Integration**: The gheatmap function allows easy addition of heatmaps alongside trees.
+
+## 14. Conclusion
+
+This tutorial demonstrated how to use ggtree to create advanced visualizations of phylogenetic trees with variant and ancestry information. We created:
+
+1. Full tree visualizations with nucleotide and REF/ALT variant coding
+2. Subset analyses focusing on donor taxa plus the B73 reference
+3. Multiple tree layouts (rectangular and circular)
+4. Integrated heatmaps for variant visualization
+
+These ggtree-based visualizations are more flexible and publication-ready compared to the base R plotting methods used previously.
+
+## 15. Troubleshooting Tips
+
+- **Missing data issues**: Use the `%<+%` operator from ggtree to properly map data to the tree tips.
+- **Layout problems**: If the tree is too crowded, try adjusting the `width` and `height` parameters in `ggsave()`.
+- **Label overlaps**: Use `geom_tiplab2()` with an appropriate `offset` value to prevent overlapping labels.
+- **Color issues**: Define custom color palettes using `scale_color_manual()` or `scale_fill_manual()`.
+- **Legend problems**: Adjust the legend position and box orientation with `theme()` options.

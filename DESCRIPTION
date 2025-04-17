@@ -1,0 +1,28 @@
+Package: targseq
+Title: Tools for targeted sequencing analysis
+Version: 0.1.0
+Authors@R: 
+    person("Your", "Name", email = "your.email@example.com", role = c("aut", "cre"))
+Description: A package for analyzing maize genetic data, creating phylogenetic trees, 
+    and visualizing genetic variants. This package provides tools for sequence alignment processing,
+    variant extraction, tree rotation, and advanced visualization with ggtree.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports: 
+    Biostrings,
+    GenomicRanges,
+    IRanges,
+    ape,
+    dplyr,
+    ggplot2,
+    ggnewscale,
+    ggtree,
+    phangorn,
+    phytools,
+    tidyverse
+Suggests:
+    knitr,
+    rmarkdown,
+    testthat

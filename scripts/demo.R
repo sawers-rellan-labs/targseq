@@ -1,0 +1,43 @@
+# Example usage of the targseq package
+library(targseq)
+library(Biostrings)
+library(ape)
+library(ggtree)
+
+# Example workflow
+# 1. Read alignment file
+aln_file <- "~/Desktop/tree_plotting/hpc1_aligned.fasta"
+alignment <- readDNAStringSet(aln_file)
+names(alignment)[1]<-"hpc1_B73"
+
+# 2. Extract variant information
+variants <- data.frame(
+  name = c("A204T", "I211V"),
+  pattern = c("GCCGTGGCGTGGCGC", "ATCACCCGC")
+)
+
+variant_data <- get_variant_gt(variants,alignment)
+
+# 3. Build phylogenetic tree
+phyDat <- phyDat(data = read.dna(aln_file, format="fasta"), type = "DNA", levels = NULL)
+names(phyDat)[1]<-"hpc1_B73"
+# Calculate distance matrix using JC69 model
+# Note: You could use modelTest() to find the best model for your data
+# mt <- modelTest(hpc1_phyDat)
+dna_dist <- dist.ml(phyDat, model="JC69")
+tree <- ladderize(upgma(dna_dist), right = FALSE)
+# 4. Rotate tree to put reference at top
+rotated_tree <- pivot_on(tree, "hpc1_B73")
+
+# 5. Visualize tree with variants
+
+  
+variant_data$A204T<- c("ALT","REF")[as.factor(variant_data$A204T)]
+variant_data$I211V<- c("REF","ALT")[as.factor(variant_data$I211V)]
+rownames(variant_data)<- names(alignment)
+
+# Create visualization
+tree_plot <- create_variant_heatmap_tree(
+  tree = rotated_tree, 
+  data =variant_data)
+print(tree_plot)

@@ -443,6 +443,13 @@ rownames(name_swap) <- name_swap$label_2
 # Rotate the tree to put the first tip (B73 reference) at the top
 out_tree <- pivot_on(hpc1_UPGMA, hpc1_UPGMA$tip.label[1]) 
 
+# Add multiple alignment overview
+
+  p <- ggtree(out_tree,) + geom_tiplab(size=3)
+  p2 <- msaplot(p, fasta = file.path(project_dir,"hpc1_nice_labels.fasta"), offset=0.05, width=0.6)+
+          theme(legend.position = "none")
+  ggsave(p2, file= file.path(project_dir,"hpc1_tree_alignment.png"), height=12, width=7, units = "in")
+
 
 create_variant_heatmap_tree <- function(tree, data, output_file, width = 7, height = 12) {
   # Prepare data for heatmap - focusing only on the variant states

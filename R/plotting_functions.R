@@ -11,10 +11,10 @@
 #' @export
 #' @importFrom ggtree ggtree geom_tiplab gheatmap theme_tree2
 #' @importFrom ggplot2 labs scale_fill_manual 
-create_variant_heatmap_tree <- function(tree, data, output_file) {
+create_variant_heatmap_tree <- function(tree, data, output_file,...) {
   # Create base tree
-  p <- ggtree(tree, ladderize = FALSE) + 
-    geom_tiplab(size = 2.5, hjust = -0.05) +
+  p <- ggtree(tree, ladderize = FALSE) +
+    geom_tiplab(size = 2.5, hjust = -0.3) +
     ggtree::vexpand(.1, 1) +
     theme_tree2()
   
@@ -23,11 +23,11 @@ create_variant_heatmap_tree <- function(tree, data, output_file) {
   
   # Add heatmap alongside the tree
   # Each column represents a different variant or ancestry information
-  p <- gheatmap(p, data, offset = 0.03, width = 0.2, 
+  p <- gheatmap(p, data, offset = 0.03, width = 0.12, 
                 colnames = TRUE, colnames_angle = 45, 
                 colnames_offset_y = 0.6, hjust = 0,
                 colnames_position = "top") +
-    scale_fill_manual(values = ref_alt_colors, name = "State") 
+    scale_fill_manual(values = ref_alt_colors, name = "Allele") 
   
   # Return the plot object
   return(p)

@@ -1,3 +1,14 @@
+# Installation steps for the targseq package
+# Run these steps first to install the package from source
+
+# Install required development tools if not already installed
+if (!requireNamespace("devtools", quietly = TRUE)) {
+  install.packages("devtools")
+}
+
+# install from GitHub if you've pushed the package there
+devtools::install_github("sawers-rellan-labs/targseq")
+
 # Example usage of the targseq package
 library(targseq)
 library(Biostrings)

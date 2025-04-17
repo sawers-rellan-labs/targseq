@@ -212,7 +212,7 @@ for (i in 1:nrow(variants)) {
 }
 
 # Examine the updated dataframe with both variants
-head(name_swap[, c("label_2", "I211V", "A204T", "founder_ancestry")])
+head(name_swap[, c("label_2","founder_ancestry","I211V", "A204T" )])
 ```
 
 ## 7. Writing the Processed Alignment to a New File
@@ -403,13 +403,8 @@ pivot_on <- function(tree, target_tip) {
 }
 ```
 
-# Steps 10-11: Visualization with ggtree
-
-Let's reimagine our visualization approach using ggtree, which provides more modern and flexible tree visualization capabilities. We'll replace steps 10 and 11 from our previous workflow with ggtree-based alternatives.
-
-## Installing and Loading Required Packages
-
-First, we need to install and load the ggtree package and its dependencies:
+## 10. Visualizing the Full Tree with ggtree
+Now we'll create comprehensive tree visualizations with variant information using ggtree. This approach provides more flexibility and better integration of multiple data types compared to base R plotting.nd load the ggtree package and its dependencies:
 
 ```{r ggtree_setup}
 # Install required packages if not already installed
@@ -437,87 +432,103 @@ library(dplyr)      # For data manipulation
 Now let's apply our rotation function and create plots using ggtree:
 
 ```{r ggtree_full_visualization}
-# Ensure row names in our metadata match the tree's tip labels
+# First, ensure row names in our metadata match the tree's tip labels
+# This is critical for proper data mapping in ggtree
 rownames(name_swap) <- name_swap$label_2
 
-# Rotate the tree to put the first tip (B73 reference) at the top
+# Rotate the tree to put B73 reference at the top
+# This uses our custom pivot_on function from the previous section
 out_tree <- pivot_on(hpc1_UPGMA, hpc1_UPGMA$tip.label[1]) 
 
-# Add multiple alignment overview
+# Save the full phylogenetic tree for future use
+tree_file <- file.path(project_dir, "hpc1_UPGMA.tre")
+write.tree(out_tree, file = tree_file)
+cat("Full phylogenetic tree saved to:", tree_file, "\n")
 
-  p <- ggtree(out_tree,ladderize = FALSE) + geom_tiplab(size=3)
-  p2 <- msaplot(p, fasta = file.path(project_dir,"hpc1_nice_labels.fasta"), offset=0.05, width=0.6)+
-          theme(legend.position = "none")
-  ggsave(p2, file= file.path(project_dir,"hpc1_tree_alignment.png"), height=12, width=7, units = "in")
+# Create a basic tree visualization with the alignment
+# This provides a comprehensive view of sequence differences
+p <- ggtree(out_tree, ladderize = FALSE) + 
+     geom_tiplab(size = 3)
+p2 <- msaplot(p, fasta = file.path(project_dir, "hpc1_nice_labels.fasta"), 
+              offset = 0.05, width = 0.6) +
+      theme(legend.position = "none")
 
+# Save the tree with alignment visualization
+ggsave(p2, file = file.path(project_dir, "hpc1_tree_alignment.png"), 
+       height = 12, width = 7, units = "in")
 
+# Define a function to create a tree with variant heatmap
+# This function will be reused for both the full dataset and the donor subset
 create_variant_heatmap_tree <- function(tree, data, output_file, width = 7, height = 12) {
-  # Prepare data for heatmap - focusing only on the variant states
-  heatmap_data <- data 
- # rownames(heatmap_data) <- data$label_2
+  # Create base tree
+  p <- ggtree(tree, ladderize = FALSE) + 
+      geom_tiplab(size = 2.5, hjust = -0.05) +
+      ggtree::vexpand(.1, 1) +
+      theme_tree2()
   
-  # Define color palette for REF/ALT
+  # Define color palette for REF/ALT states
   ref_alt_colors <- c("REF" = "tomato", "ALT" = "royalblue")
   
-  # Create base tree
-  p <- ggtree(tree, ladderize=FALSE) + 
-    geom_tiplab(size = 2.5, hjust = -0.05) +
-     ggtree::vexpand(.1, 1) +
-    theme_tree2()
-  
   # Add heatmap alongside the tree
-  p <- gheatmap(p, heatmap_data, offset = 0.03, width = 0.2, 
-                colnames = TRUE, colnames_angle = 45, colnames_offset_y = 0.6, hjust = 0,
-                colnames_position = "top",) +
-    scale_fill_manual(values = ref_alt_colors, name = "State") 
+  # Each column represents a different variant or ancestry information
+  p <- gheatmap(p, data, offset = 0.03, width = 0.2, 
+                colnames = TRUE, colnames_angle = 45, 
+                colnames_offset_y = 0.6, hjust = 0,
+                colnames_position = "top") +
+      scale_fill_manual(values = ref_alt_colors, name = "State") 
   
-  # Add titles
+  # Add descriptive titles to the plot
   p <- p + labs(title = "Maize Phylogeny with Variant Information",
                 subtitle = "REF and ALT alleles at A204T and I211V positions")
   
-  # Save the plot to a file
-  ggsave(output_file, p, width = width, height = height)
-  
-  # Return the plot object for display in R
+  # Return the plot object
   return(p)
 }
 
-# Assuming you already have:
-# 1. Your tree object (e.g., out_tree or donor_tree)
-# 2. Your data with variant information (variants_ref_alt or donor_ref_alt)
-
-# First, ensure your variant data has the correct REF/ALT coding
-# For example:
+# Prepare variant data in REF/ALT format for visualization
+# This transforms nucleotides (A, G, etc.) into meaningful REF/ALT states
 variant_data <- name_swap %>%
   mutate(
-      ancestry_call = case_when(
+    # Ancestry information (Recurrent = REF, Donor = ALT)
+    ancestry_call = case_when(
       founder_ancestry == "Recurrent" ~ "REF",
-      founder_ancestry  == "Donor" ~ "ALT",
+      founder_ancestry == "Donor" ~ "ALT",
       TRUE ~ as.character(A204T) 
     ),
+    # A204T variant (A = ALT, G = REF)
     A204T_state = case_when(
       A204T == "A" ~ "ALT",
       A204T == "G" ~ "REF",
       TRUE ~ as.character(A204T)
     ),
+    # I211V variant (G = ALT, A = REF)
     I211V_state = case_when(
       I211V == "G" ~ "ALT",
       I211V == "A" ~ "REF",
       TRUE ~ as.character(I211V)
     )
-  )  %>%   
- select(ancestry= ancestry_call, A204T=A204T_state, I211V=I211V_state)
+  ) %>%   
+  select(ancestry = ancestry_call, A204T = A204T_state, I211V = I211V_state)
 
+# Convert states to factors with consistent levels for color mapping
+variant_data$ancestry <- factor(variant_data$ancestry, levels = c("REF", "ALT"))
+variant_data$A204T <- factor(variant_data$A204T, levels = c("REF", "ALT"))
+variant_data$I211V <- factor(variant_data$I211V, levels = c("REF", "ALT"))
 
-# Convert state columns to factors
-variant_data$ancestry <- factor(variant_data$ancestry, levels = c("REF","ALT"))
-variant_data$A204T <- factor(variant_data$A204T, levels = c("REF","ALT"))
-variant_data$I211V <- factor(variant_data$I211V, levels = c("REF","ALT"))
-
-# Generate and save the heatmap visualization
-output_heatmap <- file.path(project_dir,"hpc1_all_samples.pdf")
+# Generate and save the heatmap visualization for all samples
+output_heatmap <- file.path(project_dir, "hpc1_all_samples_tre.pdf")
 variant_heatmap <- create_variant_heatmap_tree(out_tree, variant_data, output_heatmap)
 
+# Create a combination plot with both the tree+heatmap and alignment visualization
+p2 <- msaplot(variant_heatmap, 
+              fasta = file.path(project_dir, "hpc1_nice_labels.fasta"), 
+              offset = 0.05, width = 0.6) +
+      theme(legend.position = "none")
+
+# Save both visualization types
+ggsave(p2, file = file.path(project_dir, "hpc1_all_samples_tre.pdf"), 
+       height = 12, width = 9, units = "in")
+ggsave(variant_heatmap, file = output_heatmap)
 ```
 
 ## 11. Subsetting and Visualizing Donor Taxa with ggtree
@@ -602,7 +613,12 @@ variant_data$I211V <- factor(variant_data$I211V, levels = c("REF","ALT"))
 
 # Generate and save the heatmap visualization
 output_heatmap <- file.path(project_dir,"hpc1_donor_subset.pdf")
-variant_heatmap <- create_variant_heatmap_tree(donor_tree, variant_data, output_heatmap)
+variant_heatmap <- create_variant_heatmap_tree(donor_tree, variant_data)
+
+p2 <- msaplot(variant_heatmap, fasta = donor_alignment_file , offset=0.05, width=0.6) +
+  theme(legend.position = "none")
+ggsave(p2, file= file.path(project_dir,"hpc1_donor_subset.png"), height=12, width=9, units = "in")
+ggsave(variant_heatmap, file= output_heatmap )
 
 ```
 
@@ -612,6 +628,7 @@ Let's examine the complete file structure with all our inputs and outputs:
 
 ```{r file_structure, echo=FALSE, eval=TRUE}
 # This chunk will be evaluated when knitting
+# This chunk will be evaluated when knitting
 cat("tree_plotting/\n")
 cat("├── hpc1_aligned.fasta              # Input: Original alignment file\n")
 cat("├── seqid_label.csv                 # Input: Metadata mapping file\n")
@@ -619,8 +636,12 @@ cat("├── hpc1_nice_labels.fasta          # Output: Alignment with renamed 
 cat("├── hpc1_donor_subset.fasta         # Output: Subset alignment with donor taxa + B73\n")
 cat("├── hpc1_UPGMA.tre                  # Output: Full phylogenetic tree in Newick format\n")
 cat("├── hpc1_donor_subset.tre           # Output: Donor subset tree in Newick format\n")
-cat("├── hpc1_donor_all_samples.pdf         # Output: Full tree visualization with variant heatmap\n")
-cat("└── hpc1_donor_subset.pdf  # Output: Donor subset tree with variant heatmap\n")
+cat("├── hpc1_all_samples.pdf            # Output: Full tree visualization with variant heatmap\n")
+cat("├── hpc1_tree_alignment.png         # Output: Full tree with sequence alignment visualization\n")
+cat("├── hpc1_tree_alignment_with_heatmap.png # Output: Full tree with heatmap and alignment\n")
+cat("├── hpc1_donor_subset.pdf           # Output: Donor subset tree with variant heatmap\n")
+cat("├── hpc1_donor_tree_alignment.png   # Output: Donor subset tree with alignment visualization\n")
+cat("└── hpc1_donor_subset_with_heatmap.png # Output: Donor subset with heatmap and alignment\n")
 ```
 
 ## 13. Advantages of ggtree Over Base R Plotting

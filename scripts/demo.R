@@ -15,6 +15,7 @@ library(Biostrings)
 library(phangorn)
 library(ape)
 library(ggtree)
+library(ggplot2)
 
 # Example workflow
 # 1. Read alignment file
@@ -50,14 +51,21 @@ variant_data$I211V<- c("REF","ALT")[as.factor(variant_data$I211V)]
 rownames(variant_data)<- names(alignment)
 
 
-taxa_info <- system.file("extdata", "seqid_label.csv", package="targseq")
-
+taxa_info <- read.csv(system.file("extdata", "seqid_label.csv", package="targseq"))
+rownames(taxa_info) <-taxa_info$seqid
+taxa_info <- taxa_info[tree$tip.label,]
 # Create visualization
+
 tree_plot <- create_variant_heatmap_tree(
   tree = rotated_tree, 
   data =variant_data)
 
-tree_plot %<+% variant_data +
-  geom_tippoint(aes(color=Country)) 
+pal <-c("Recurrent" = "tomato", "Donor" = "royalblue")
+
+quartz()
+
+tree_plot %<+% taxa_info  +
+  geom_tippoint(aes(color=founder_ancestry),position = position_nudge(x = 0.0015)) +
+  scale_color_manual(values=pal)
 
 print(tree_plot)

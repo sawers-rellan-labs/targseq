@@ -12,6 +12,7 @@ devtools::install_github("sawers-rellan-labs/targseq")
 # Example usage of the targseq package
 library(targseq)
 library(Biostrings)
+library(phangorn)
 library(ape)
 library(ggtree)
 
@@ -21,7 +22,6 @@ library(ggtree)
 aln_file <- system.file("extdata", "hpc1_aligned.fasta", package="targseq")
 
 alignment <- readDNAStringSet(aln_file)
-names(alignment)[1]<-"hpc1_B73"
 
 # 2. Extract variant information
 variants <- data.frame(
@@ -32,8 +32,8 @@ variants <- data.frame(
 variant_data <- get_variant_gt(variants,alignment)
 
 # 3. Build phylogenetic tree
-phyDat <- phyDat(data = read.dna(aln_file, format="fasta"), type = "DNA", levels = NULL)
-names(phyDat)[1]<-"hpc1_B73"
+phyDat  <- phyDat(data = read.dna(aln_file, format="fasta"), type = "DNA", levels = NULL)
+
 # Calculate distance matrix using JC69 model
 # Note: You could use modelTest() to find the best model for your data
 # mt <- modelTest(hpc1_phyDat)

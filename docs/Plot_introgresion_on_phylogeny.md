@@ -1,14 +1,15 @@
-Maize Phylogeny Analysis with Alignment Relabeling
+Maize Phylogeny Analysis with Multiple Variants
 ================
 Maize Genetics Lab
-2025-04-14
+2025-04-17
 
 This tutorial walks through a complete workflow for processing maize
 genetic data, focusing on:
 
 1.  Relabeling sequence identifiers in a FASTA alignment with meaningful
     taxonomic labels
-2.  Extracting genotype information at the I211V variant position
+2.  Extracting genotype information at multiple variant positions (I211V
+    and A204T)
 3.  Creating a phylogenetic tree with ancestry and variant information
 4.  Rotating the tree to position the B73 reference genome at the top
 
@@ -38,7 +39,7 @@ Let’s set up our directory structure and read our input files:
 
 ``` r
 # Create a project directory if it doesn't exist
-project_dir <- "tree_plotting"
+project_dir <- "~/Desktop/tree_plotting"
 if (!dir.exists(project_dir)) {
   dir.create(project_dir)
 }
@@ -107,9 +108,9 @@ n_pos <- width(filtered_alignment)[1]
 head(names(filtered_alignment))
 ```
 
-## 4. Trimming the Alignment and Extracting the I211V Variant Information
+## 4. Trimming the Alignment
 
-Next, we’ll trim the alignment and identify the I211V variant position:
+Next, we’ll trim the alignment to focus on the region of interest:
 
 ``` r
 # Load GenomicRanges for efficient sequence manipulation
@@ -127,39 +128,90 @@ trimmedRanges <- GRanges(
 # Perform the trimming operation
 trimmed_alignment <- filtered_alignment[trimmedRanges]
 
-
 # Verify the trimmed alignment
 cat("Trimmed alignment length:", width(trimmed_alignment)[1], "bp\n")
 head(names(trimmed_alignment))
-
-# Find the position of the I211V variant using a specific sequence pattern
-# The pattern "ATCACCCGC" corresponds to the I211V region in the B73 reference
-I211V_B73 <- vmatchPattern("ATCACCCGC", trimmed_alignment)[[1]]
-
-# Extract the variant position for all sequences
-I211V_range <- GRanges(
-  seqnames = names(filtered_alignment),
-  ranges = IRanges(
-    start = rep(start(I211V_B73), n_taxa),
-    end = rep(start(I211V_B73), n_taxa)
-  )
-)
-
-# Extract just the nucleotide at the variant position from each sequence
-I211V_aln <- trimmed_alignment[I211V_range]
-I211V_matrix <- as.matrix(I211V_aln)
-
-# Replace gap characters with NA for cleaner data handling
-I211V_matrix[I211V_matrix == "-"] <- NA
-
-# Add the variant information to our metadata dataframe
-name_swap$I211V <- factor(as.vector(I211V_matrix))
-
-# Check the distribution of genotypes at this position
-table(name_swap$I211V, useNA = "ifany")
 ```
 
-## 5. Writing the Processed Alignment to a New File
+## 5. Creating a Function to Extract Variant Information
+
+Let’s create a reusable function to extract variant information from our
+alignment:
+
+``` r
+# Function to extract variant information from alignment
+extract_variant <- function(alignment, variant_name, match_pattern, reference_seq_index = 1) {
+  # Find the position of the variant using the match pattern in the reference sequence
+  variant_match <- vmatchPattern(match_pattern, alignment)[[reference_seq_index]]
+  
+  if (length(variant_match) == 0) {
+    stop("Pattern '", match_pattern, "' not found in reference sequence")
+  }
+  
+  # Get the starting position of the match
+  variant_start <- start(variant_match)
+  
+  # Log information about the variant
+  cat(variant_name, "variant found at position:", variant_start, "\n")
+  
+  # Number of sequences in the alignment
+  n_taxa <- length(alignment)
+  
+  # Create genomic ranges to extract just the variant position from each sequence
+  variant_range <- GRanges(
+    seqnames = names(alignment),
+    ranges = IRanges(
+      start = rep(variant_start, n_taxa),
+      end = rep(variant_start, n_taxa)
+    )
+  )
+  
+  # Extract the nucleotide at the variant position for each sequence
+  variant_aln <- alignment[variant_range]
+  variant_matrix <- as.matrix(variant_aln)
+  
+  # Replace gap characters with NA
+  variant_matrix[variant_matrix == "-"] <- NA
+  
+  # Return the variant data as a factor
+  return(factor(as.vector(variant_matrix)))
+}
+```
+
+## 6. Extracting Variant Information
+
+Now we can extract information for both variants using our function:
+
+``` r
+# Define our variants
+variants <- data.frame(
+  name = c("A204T","I211V"),
+  pattern = c( "GCCGTGGCGTGGCGC", "ATCACCCGC")
+)
+
+
+# Extract data for each variant and add to name_swap dataframe
+for (i in 1:nrow(variants)) {
+  variant_name <- variants$name[i]
+  variant_pattern <- variants$pattern[i]
+  
+  # Extract the variant data
+  name_swap[[variant_name]] <- extract_variant(
+    trimmed_alignment, 
+    variant_name, 
+    variant_pattern
+  )
+  
+  # Check the distribution of genotypes at this position
+  cat("Distribution of", variant_name, "genotypes:\n")
+  print(table(name_swap[[variant_name]], useNA = "ifany"))
+}
+
+# Examine the updated dataframe with both variants
+head(name_swap[, c("label_2", "I211V", "A204T", "founder_ancestry")])
+```
+
+## 7. Writing the Processed Alignment to a New File
 
 Let’s save our relabeled and trimmed alignment:
 
@@ -172,7 +224,7 @@ writeXStringSet(trimmed_alignment, output_alignment, format="fasta")
 cat("Renamed alignment written to:", output_alignment, "\n")
 ```
 
-## 6. Building a Phylogenetic Tree
+## 8. Building a Phylogenetic Tree
 
 Now we’ll build and visualize a phylogenetic tree from our processed
 alignment:
@@ -208,161 +260,384 @@ hpc1_UPGMA <- ladderize(upgma(dna_dist), right = FALSE)
 plot(hpc1_UPGMA, cex = 0.7, main = "UPGMA Tree Before Rotation")
 ```
 
-## 7. Implementing the Tree Rotation Function
+## 9. Implementing the Tree Rotation Function
 
 To position B73 at the top of our visualization, we need a specialized
 rotation function:
 
 ``` r
+flip_tree <- function(tree){
+# this function will reverse the tree plotting order
+# by reversing the edges
+revtree <- tree
+current_edges <- tree$edge     
+rev_edges <- current_edges[rev(1:nrow(current_edges)),]
+revtree$edge <- rev_edges
+revtree$edge.length <- rev(tree$edge.length)
+
+is_tip <- revtree$edge[,2] <= length(revtree$tip.label)
+
+ordered_tips <- revtree$edge[is_tip, 2]
+
+revtree$tip.label[ordered_tips]
+
+revtree
+}
+
 # Function to rotate a tree to position a specific tip at the top
-pivot_on <- function(x, target_tip){
-  target_tip_label <- target_tip
-  tree <- x
+pivot_on <- function(tree, target_tip) {
+  # Check if the tree is valid
+  if (is.null(tree) || !inherits(tree, "phylo")) {
+    stop("Input must be a valid phylogenetic tree (phylo object)")
+  }
+  
+  # Check if the target tip exists in the tree
+  if (!target_tip %in% tree$tip.label) {
+    stop("Target tip '", target_tip, "' not found in the tree.")
+  }
   
   # Make a copy to modify, keeping the original intact
   rotated_tree <- tree
-  
-  # Check if the target tip exists in the tree
-  if (!target_tip_label %in% rotated_tree$tip.label) {
-    stop("Target tip '", target_tip_label, "' not found in the tree.")
-  }
   
   # Get the total number of tips
   ntips <- Ntip(rotated_tree)
   
   # Get the node number corresponding to the target tip
-  target_tip_node <- which(rotated_tree$tip.label == target_tip_label)
+  target_tip_node <- which(rotated_tree$tip.label == target_tip)
   
-  # Use a reference node to establish a path
-  # Here we're using the last tip as our reference
-  reference_node <- ntips 
+  # Get the root node (typically ntips + 1 in ape trees)
+  root_node <- ntips + 1
   
-  # Find the path from the reference node to our target tip
-  node_path <- nodepath(rotated_tree, from = reference_node, to = target_tip_node)
+  # Try to find path from root to the target tip
+  path_exists <- FALSE
+  tryCatch({
+    node_path <- nodepath(rotated_tree, from = root_node, to = target_tip_node)
+    if (length(node_path) > 0) path_exists <- TRUE
+  }, error = function(e) {
+    # If path from root fails, we'll try a different approach
+    path_exists <- FALSE
+  })
+  
+  # If we couldn't find a path from the root, try using a reference tip
+  if (!path_exists) {
+    # Use the last tip as a reference point
+    reference_node <- ntips
+    
+    # Check that reference is not the same as target
+    if (reference_node == target_tip_node) {
+      reference_node <- 1  # Use the first tip instead
+    }
+    
+    # Try to find a path between reference and target
+    tryCatch({
+      node_path <- nodepath(rotated_tree, from = reference_node, to = target_tip_node)
+      if (length(node_path) == 0) {
+        stop("Cannot find a valid path between reference and target tip")
+      }
+    }, error = function(e) {
+      stop("Failed to find a valid path in the tree: ", e$message)
+    })
+  }
   
   # We only need to consider rotating internal nodes on the path
   # Internal nodes have numbers greater than ntips
   internal_nodes_on_path <- node_path[node_path > ntips]
   
+  # If no internal nodes to rotate, return the original tree
+  if (length(internal_nodes_on_path) == 0) {
+    return(rotated_tree)
+  }
+  
   # Iterate through each node and rotate if necessary
-  if (length(internal_nodes_on_path) > 0) {
-    # Process nodes in order from root towards tip
-    nodes_to_check <- sort(internal_nodes_on_path)
+  # Process nodes in order from root towards tip
+  nodes_to_check <- sort(internal_nodes_on_path)
+  
+  for (node_to_rotate in nodes_to_check) {
+    # Find the direct children of this internal node
+    children <- rotated_tree$edge[rotated_tree$edge[, 1] == node_to_rotate, 2]
     
-    for (node_to_rotate in nodes_to_check) {
-      # Find the direct children of this internal node
-      children <- rotated_tree$edge[rotated_tree$edge[, 1] == node_to_rotate, 2]
-      
-      # Check if we have exactly two children (bifurcating tree assumption)
-      if (length(children) != 2) {
-        warning("Node ", node_to_rotate, " is not bifurcating. Rotation might not work as expected.")
-        next # Skip rotation for non-bifurcating nodes
-      }
-      
-      # Find which child is on the path towards the target tip
-      current_node_index_in_path <- which(node_path == node_to_rotate)
+    # Check if we have exactly two children (bifurcating tree assumption)
+    if (length(children) != 2) {
+      warning("Node ", node_to_rotate, " is not bifurcating. Rotation might not work as expected.")
+      next # Skip rotation for non-bifurcating nodes
+    }
+    
+    # Find which child is on the path towards the target tip
+    current_node_index_in_path <- which(node_path == node_to_rotate)
+    
+    # Make sure we're not at the end of the path
+    if (current_node_index_in_path < length(node_path)) {
       child_on_path <- node_path[current_node_index_in_path + 1]
       
       # If the child on the path is the first child, rotate the node
-      # This will make our target tip appear higher in the visualization
       if (child_on_path == children[1]) {
-        rotated_tree <- rotate(rotated_tree, node = node_to_rotate)
+        rotated_tree <- ape::rotate(rotated_tree, node = node_to_rotate)
       }
     }
   }
   
   # Return the rotated tree
-  return(rotated_tree)
+  constrained_tree <- rotateConstr(rotated_tree,rotated_tree$tip.label)
+  return(flip_tree(constrained_tree))
 }
 ```
 
-## 8. Applying the Rotation and Creating the Final Visualization
+# Steps 10-11: Visualization with ggtree
 
-Now let’s apply our rotation function and create the final plot:
+Let’s reimagine our visualization approach using ggtree, which provides
+more modern and flexible tree visualization capabilities. We’ll replace
+steps 10 and 11 from our previous workflow with ggtree-based
+alternatives.
+
+## Installing and Loading Required Packages
+
+First, we need to install and load the ggtree package and its
+dependencies:
+
+``` r
+# Install required packages if not already installed
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+if (!requireNamespace("ggtree", quietly = TRUE))
+  BiocManager::install("ggtree")
+
+if (!requireNamespace("ggplot2", quietly = TRUE))
+  install.packages("ggplot2")
+
+if (!requireNamespace("ggnewscale", quietly = TRUE))
+  install.packages("ggnewscale")
+
+# Load packages
+library(ggtree)     # For tree visualization
+library(ggplot2)    # For plotting
+library(ggnewscale) # For multiple color scales in the same plot
+library(dplyr)      # For data manipulation
+```
+
+## 10. Visualizing the Full Tree with ggtree
+
+Now let’s apply our rotation function and create plots using ggtree:
 
 ``` r
 # Ensure row names in our metadata match the tree's tip labels
 rownames(name_swap) <- name_swap$label_2
 
 # Rotate the tree to put the first tip (B73 reference) at the top
-out_tree <- pivot_on(hpc1_UPGMA, hpc1_UPGMA$tip.label[1])
+out_tree <- pivot_on(hpc1_UPGMA, hpc1_UPGMA$tip.label[1]) 
 
-# Create a function to generate our visualization
-plot_output <- function(file, tree, data){ 
-  # Rename founder_ancestry column to ancestry for clarity
-  data <- data %>% dplyr::rename(ancestry = "founder_ancestry")
+
+create_variant_heatmap_tree <- function(tree, data, output_file, width = 7, height = 12) {
+  # Prepare data for heatmap - focusing only on the variant states
+  heatmap_data <- data 
+ # rownames(heatmap_data) <- data$label_2
   
-  # Define color palette for our categories
-  pal <- c("gold", "purple3", "tomato", "royalblue")
-  names(pal) <- c("Recurrent", "Donor", "A", "G")
+  # Define color palette for REF/ALT
+  ref_alt_colors <- c("REF" = "tomato", "ALT" = "royalblue")
   
-  # Extract just the columns we want to visualize
-  X <- data[, c("ancestry", "I211V")]
-  rownames(X) <- rownames(data)
+  # Create base tree
+  p <- ggtree(tree, ladderize=FALSE) + 
+    geom_tiplab(size = 2.5, hjust = -0.05) +
+     ggtree::vexpand(.1, 1) +
+    theme_tree2()
   
-  # Create the phylogenetic tree with colored dots showing metadata
-  pdf(file = file, height = 13, width = 7)
-  dotTree(tree, X, colors = pal, 
-          labels = TRUE,           # Show taxon labels
-          fsize = 0.7,             # Font size
-          border = "transparent",  # No border around dots
-          cex.dot = 2)             # Size of dots
-  dev.off()
+  # Add heatmap alongside the tree
+  p <- gheatmap(p, heatmap_data, offset = 0.03, width = 0.2, 
+                colnames = TRUE, colnames_angle = 45, colnames_offset_y = 0.6, hjust = 0,
+                colnames_position = "top",) +
+    scale_fill_manual(values = ref_alt_colors, name = "State") 
+  
+  # Add titles
+  p <- p + labs(title = "Maize Phylogeny with Variant Information",
+                subtitle = "REF and ALT alleles at A204T and I211V positions")
+  
+  # Save the plot to a file
+  ggsave(output_file, p, width = width, height = height)
+  
+  # Return the plot object for display in R
+  return(p)
 }
 
-# Generate the visualization
-output_plot <- file.path(project_dir, "hpc1_UPGMA_dot_tree.pdf")
-plot_output(output_plot, out_tree, name_swap)
-cat("Plot saved to:", output_plot, "\n")
+# Assuming you already have:
+# 1. Your tree object (e.g., out_tree or donor_tree)
+# 2. Your data with variant information (variants_ref_alt or donor_ref_alt)
 
-# Save the tree in Newick format for future use
-output_tree <- file.path(project_dir, "hpc1_UPGMA.tre")
-write.tree(out_tree, file = output_tree)
-cat("Tree saved to:", output_tree, "\n")
+# First, ensure your variant data has the correct REF/ALT coding
+# For example:
+variant_data <- name_swap %>%
+  mutate(
+      ancestry_call = case_when(
+      founder_ancestry == "Recurrent" ~ "REF",
+      founder_ancestry  == "Donor" ~ "ALT",
+      TRUE ~ as.character(A204T) 
+    ),
+    A204T_state = case_when(
+      A204T == "A" ~ "ALT",
+      A204T == "G" ~ "REF",
+      TRUE ~ as.character(A204T)
+    ),
+    I211V_state = case_when(
+      I211V == "G" ~ "ALT",
+      I211V == "A" ~ "REF",
+      TRUE ~ as.character(I211V)
+    )
+  )  %>%   
+ select(ancestry= ancestry_call, A204T=A204T_state, I211V=I211V_state)
 
-# Display the tree in the current R session (if running interactively)
-plot(out_tree, main = "Rotated Tree with B73 at Top", cex = 0.7)
+
+# Convert state columns to factors
+variant_data$ancestry <- factor(variant_data$ancestry, levels = c("REF","ALT"))
+variant_data$A204T <- factor(variant_data$A204T, levels = c("REF","ALT"))
+variant_data$I211V <- factor(variant_data$I211V, levels = c("REF","ALT"))
+
+# Generate and save the heatmap visualization
+output_heatmap <- file.path(project_dir,"hpc1_donor_variants.pdf")
+variant_heatmap <- create_variant_heatmap_tree(out_tree, variant_data, output_heatmap)
 ```
 
-## 9. Project File Structure
+## 11. Subsetting and Visualizing Donor Taxa with ggtree
 
-Let’s examine the complete file structure of our project:
+Now we’ll create a subset analysis focusing only on taxa with donor
+ancestry plus the B73 reference:
+
+``` r
+# First, identify B73 in our dataset
+b73_label <- grep("B73", name_swap$label_2, value = TRUE)[1]
+cat("B73 reference identified as:", b73_label, "\n")
+
+# Create a subset of taxa with donor ancestry plus B73
+donor_subset <- name_swap %>%
+  filter(founder_ancestry == "Donor" | label_2 == b73_label)
+
+# Check how many taxa we have in our subset
+cat("Number of taxa in donor subset:", nrow(donor_subset), "\n")
+
+# Extract the subset of sequences from our alignment
+donor_alignment <- trimmed_alignment[donor_subset$label_2]
+
+# Write the subset alignment to a file
+donor_alignment_file <- file.path(project_dir, "hpc1_donor_subset.fasta")
+writeXStringSet(donor_alignment, donor_alignment_file, format="fasta")
+cat("Donor subset alignment written to:", donor_alignment_file, "\n")
+
+# Build a new tree for the donor subset
+donor_aln <- read.dna(donor_alignment_file, format="fasta")
+donor_phyDat <- phyDat(donor_aln, type = "DNA", levels = NULL)
+donor_dist <- dist.ml(donor_phyDat, model="JC69")
+donor_UPGMA <- ladderize(upgma(donor_dist), right = FALSE)
+
+# Rotate the donor tree to put B73 at the top
+donor_tree <- pivot_on(donor_UPGMA, b73_label)
+
+# Save the donor subset tree
+donor_tree_file <- file.path(project_dir, "hpc1_donor_subset.tre")
+write.tree(donor_tree, file = donor_tree_file)
+cat("Donor subset tree saved to:", donor_tree_file, "\n")
+
+# Assuming you already have:
+# 1. Your tree object (e.g., out_tree or donor_tree)
+# 2. Your data with variant information (variants_ref_alt or donor_ref_alt)
+
+# First, ensure your variant data has the correct REF/ALT coding
+# For example:
+variant_data <- name_swap[donor_subset$label_2,] %>%
+  mutate(
+      ancestry_call = case_when(
+      founder_ancestry == "Recurrent" ~ "REF",
+      founder_ancestry  == "Donor" ~ "ALT",
+      TRUE ~ as.character(A204T) 
+    ),
+    A204T_state = case_when(
+      A204T == "A" ~ "ALT",
+      A204T == "G" ~ "REF",
+      TRUE ~ as.character(A204T)
+    ),
+    I211V_state = case_when(
+      I211V == "G" ~ "ALT",
+      I211V == "A" ~ "REF",
+      TRUE ~ as.character(I211V)
+    )
+  )  %>%   
+ select(ancestry= ancestry_call, A204T=A204T_state, I211V=I211V_state)
+
+
+# Convert state columns to factors
+variant_data$ancestry <- factor(variant_data$ancestry, levels = c("REF","ALT"))
+variant_data$A204T <- factor(variant_data$A204T, levels = c("REF","ALT"))
+variant_data$I211V <- factor(variant_data$I211V, levels = c("REF","ALT"))
+
+# Generate and save the heatmap visualization
+output_heatmap <- file.path(project_dir,"hpc1_donor_subset.pdf")
+variant_heatmap <- create_variant_heatmap_tree(donor_tree, variant_data, output_heatmap)
+```
+
+## 12. Project File Structure with ggtree Outputs
+
+Let’s examine the updated file structure with our ggtree outputs:
 
     ## tree_plotting/
 
-    ## ├── hpc1_aligned.fasta        # Input: Original alignment file
+    ## ├── hpc1_aligned.fasta              # Input: Original alignment file
 
-    ## ├── seqid_label.csv         # Input: Metadata mapping technical IDs to meaningful names
+    ## ├── seqid_label.csv                 # Input: Metadata mapping file
 
-    ## ├── hpc1_nice_labels.fasta    # Output: Alignment with renamed sequences
+    ## ├── hpc1_nice_labels.fasta          # Output: Alignment with renamed sequences
 
-    ## ├── hpc1_UPGMA.tre            # Output: Phylogenetic tree in Newick format
+    ## ├── hpc1_UPGMA.tre                  # Output: Phylogenetic tree in Newick format
 
-    ## └── hpc1_UPGMA_dot_tree.pdf   # Output: Visualization with ancestry and variant information
+## 13. Advantages of ggtree Over Base R Plotting
 
-## Conclusion
+The ggtree package offers several advantages over base R plotting
+functions for phylogenetic trees:
 
-This tutorial demonstrated how to:
+1.  **Grammar of Graphics Approach**: Uses the familiar ggplot2 syntax
+    for consistent and extensible visualizations.
 
-1.  Load and process FASTA alignment data using Biostrings
-2.  Map sequence IDs to meaningful taxonomic labels
-3.  Extract genotype information at the I211V variant position
-4.  Build a phylogenetic tree using distance-based methods
-5.  Rotate the tree to position B73 at the top
-6.  Visualize the tree with ancestry and variant information
+2.  **Layered Visualizations**: Easily add multiple data layers
+    (geom_tippoint, geom_hilight, etc.) to the tree.
 
-These skills are widely applicable to comparative genomics and
-population genetics studies in maize and other organisms.
+3.  **Multiple Tree Layouts**: Supports rectangular, circular, fan, and
+    other tree layouts without rewriting code.
 
-## Troubleshooting Tips
+4.  **Integration with Other Data**: The `%<+%` operator makes it easy
+    to map external data onto the tree.
 
-- **Error finding I211V position**: If the `vmatchPattern` function
-  fails, verify that the pattern sequence exists in your alignment. You
-  may need to adjust the pattern or the starting position.
-- **Tree tips not matching metadata**: Ensure that the labels in your
-  tree match exactly with the rownames in your metadata dataframe.
-- **Rotation function not working**: The rotation function assumes a
-  bifurcating tree. If your tree has multifurcations, you may need to
-  modify the function.
-- **Missing data in visualization**: Check for NA values in your
-  metadata columns, especially the founder_ancestry and I211V columns.
+5.  **Publication-Ready Figures**: Creates high-quality vector graphics
+    with customizable aesthetics.
+
+6.  **Highlighting and Annotation**: Easily highlight specific clades or
+    nodes of interest.
+
+7.  **Multiple Output Formats**: Compatible with all ggplot2 output
+    formats (PDF, PNG, SVG, etc.).
+
+8.  **Heatmap Integration**: The gheatmap function allows easy addition
+    of heatmaps alongside trees.
+
+## 14. Conclusion
+
+This tutorial demonstrated how to use ggtree to create advanced
+visualizations of phylogenetic trees with variant and ancestry
+information. We created:
+
+1.  Full tree visualizations with nucleotide and REF/ALT variant coding
+2.  Subset analyses focusing on donor taxa plus the B73 reference
+3.  Multiple tree layouts (rectangular and circular)
+4.  Integrated heatmaps for variant visualization
+
+These ggtree-based visualizations are more flexible and
+publication-ready compared to the base R plotting methods used
+previously.
+
+## 15. Troubleshooting Tips
+
+- **Missing data issues**: Use the `%<+%` operator from ggtree to
+  properly map data to the tree tips.
+- **Layout problems**: If the tree is too crowded, try adjusting the
+  `width` and `height` parameters in `ggsave()`.
+- **Label overlaps**: Use `geom_tiplab2()` with an appropriate `offset`
+  value to prevent overlapping labels.
+- **Color issues**: Define custom color palettes using
+  `scale_color_manual()` or `scale_fill_manual()`.
+- **Legend problems**: Adjust the legend position and box orientation
+  with `theme()` options.

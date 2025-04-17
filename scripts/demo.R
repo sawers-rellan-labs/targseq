@@ -42,7 +42,7 @@ rotated_tree <- pivot_on(tree, "hpc1_B73")
 
 # 5. Visualize tree with variants
 
-  
+# Change coding of the genotype to REF/ALT  
 variant_data$A204T<- c("ALT","REF")[as.factor(variant_data$A204T)]
 variant_data$I211V<- c("REF","ALT")[as.factor(variant_data$I211V)]
 rownames(variant_data)<- names(alignment)

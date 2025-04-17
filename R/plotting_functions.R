@@ -7,13 +7,11 @@
 #' @param tree A phylo object to visualize
 #' @param data Dataframe with variant data to display as a heatmap
 #' @param output_file Optional file path to save the plot
-#' @param width Plot width in inches (default: 7)
-#' @param height Plot height in inches (default: 12)
 #' @return A ggtree plot object
 #' @export
 #' @importFrom ggtree ggtree geom_tiplab gheatmap theme_tree2
 #' @importFrom ggplot2 labs scale_fill_manual 
-create_variant_heatmap_tree <- function(tree, data, output_file, width = 7, height = 12) {
+create_variant_heatmap_tree <- function(tree, data, output_file) {
   # Create base tree
   p <- ggtree(tree, ladderize = FALSE) + 
     geom_tiplab(size = 2.5, hjust = -0.05) +

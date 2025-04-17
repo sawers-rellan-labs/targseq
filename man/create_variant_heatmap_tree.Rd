@@ -4,7 +4,7 @@
 \alias{create_variant_heatmap_tree}
 \title{Create a tree visualization with a variant heatmap}
 \usage{
-create_variant_heatmap_tree(tree, data, output_file, width = 7, height = 12)
+create_variant_heatmap_tree(tree, data, output_file)
 }
 \arguments{
 \item{tree}{A phylo object to visualize}
@@ -12,10 +12,6 @@ create_variant_heatmap_tree(tree, data, output_file, width = 7, height = 12)
 \item{data}{Dataframe with variant data to display as a heatmap}
 
 \item{output_file}{Optional file path to save the plot}
-
-\item{width}{Plot width in inches (default: 7)}
-
-\item{height}{Plot height in inches (default: 12)}
 }
 \value{
 A ggtree plot object

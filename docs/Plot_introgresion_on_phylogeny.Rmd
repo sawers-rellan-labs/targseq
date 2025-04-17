@@ -566,7 +566,7 @@ variant_data$A204T <- factor(variant_data$A204T, levels = c("REF","ALT"))
 variant_data$I211V <- factor(variant_data$I211V, levels = c("REF","ALT"))
 
 # Generate and save the heatmap visualization
-output_heatmap <- file.path(project_dir,"hpc1_donor_subset_variants.pdf")
+output_heatmap <- file.path(project_dir,"hpc1_donor_subset.pdf")
 variant_heatmap <- create_variant_heatmap_tree(donor_tree, variant_data, output_heatmap)
 
 ```

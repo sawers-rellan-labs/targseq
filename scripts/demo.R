@@ -49,8 +49,15 @@ variant_data$A204T<- c("ALT","REF")[as.factor(variant_data$A204T)]
 variant_data$I211V<- c("REF","ALT")[as.factor(variant_data$I211V)]
 rownames(variant_data)<- names(alignment)
 
+
+taxa_info <- system.file("extdata", "seqid_label.csv", package="targseq")
+
 # Create visualization
 tree_plot <- create_variant_heatmap_tree(
   tree = rotated_tree, 
   data =variant_data)
+
+tree_plot %<+% variant_data +
+  geom_tippoint(aes(color=Country)) 
+
 print(tree_plot)

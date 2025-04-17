@@ -17,7 +17,9 @@ library(ggtree)
 
 # Example workflow
 # 1. Read alignment file
-aln_file <- "~/Desktop/tree_plotting/hpc1_aligned.fasta"
+
+aln_file <- system.file("extdata", "hpc1_aligned.fasta", package="targseq")
+
 alignment <- readDNAStringSet(aln_file)
 names(alignment)[1]<-"hpc1_B73"
 

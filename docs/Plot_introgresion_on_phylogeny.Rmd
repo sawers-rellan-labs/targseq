@@ -212,7 +212,7 @@ for (i in 1:nrow(variants)) {
 }
 
 # Examine the updated dataframe with both variants
-head(name_swap[, c("label_2", "I211V", "A204T", "founder_ancestry")])
+head(name_swap[, c("label_2","founder_ancestry","I211V", "A204T" )])
 ```
 
 ## 7. Writing the Processed Alignment to a New File
@@ -445,10 +445,10 @@ out_tree <- pivot_on(hpc1_UPGMA, hpc1_UPGMA$tip.label[1])
 
 # Add multiple alignment overview
 
-  p <- ggtree(out_tree,ladderize = FALSE) + geom_tiplab(size=3)
-  p2 <- msaplot(p, fasta = file.path(project_dir,"hpc1_nice_labels.fasta"), offset=0.05, width=0.6)+
+p <- ggtree(out_tree,ladderize = FALSE) + geom_tiplab(size=3)
+p2 <- msaplot(p, fasta = file.path(project_dir,"hpc1_nice_labels.fasta"), offset=0.05, width=0.6)+
           theme(legend.position = "none")
-  ggsave(p2, file= file.path(project_dir,"hpc1_tree_alignment.png"), height=12, width=7, units = "in")
+ggsave(p2, file= file.path(project_dir,"hpc1_tree_alignment.png"), height=12, width=7, units = "in")
 
 
 create_variant_heatmap_tree <- function(tree, data, output_file, width = 7, height = 12) {
@@ -474,10 +474,6 @@ create_variant_heatmap_tree <- function(tree, data, output_file, width = 7, heig
   # Add titles
   p <- p + labs(title = "Maize Phylogeny with Variant Information",
                 subtitle = "REF and ALT alleles at A204T and I211V positions")
-  
-  # Save the plot to a file
-  ggsave(output_file, p, width = width, height = height)
-  
   # Return the plot object for display in R
   return(p)
 }
@@ -517,7 +513,13 @@ variant_data$I211V <- factor(variant_data$I211V, levels = c("REF","ALT"))
 # Generate and save the heatmap visualization
 output_heatmap <- file.path(project_dir,"hpc1_all_samples.pdf")
 variant_heatmap <- create_variant_heatmap_tree(out_tree, variant_data, output_heatmap)
+# Add multiple alignment overview
 
+
+p2 <- msaplot(variant_heatmap, fasta = file.path(project_dir,"hpc1_nice_labels.fasta"), offset=0.05, width=0.6) +
+  theme(legend.position = "none")
+ggsave(p2, file= file.path(project_dir,"hpc1_tree_alignment.png"), height=12, width=9, units = "in")
+ggsave(variant_heatmap, file= output_heatmap )
 ```
 
 ## 11. Subsetting and Visualizing Donor Taxa with ggtree
@@ -602,7 +604,12 @@ variant_data$I211V <- factor(variant_data$I211V, levels = c("REF","ALT"))
 
 # Generate and save the heatmap visualization
 output_heatmap <- file.path(project_dir,"hpc1_donor_subset.pdf")
-variant_heatmap <- create_variant_heatmap_tree(donor_tree, variant_data, output_heatmap)
+variant_heatmap <- create_variant_heatmap_tree(donor_tree, variant_data)
+
+p2 <- msaplot(variant_heatmap, fasta = donor_alignment_file , offset=0.05, width=0.6) +
+  theme(legend.position = "none")
+ggsave(p2, file= file.path(project_dir,"hpc1_donor_subset.png"), height=12, width=9, units = "in")
+ggsave(variant_heatmap, file= output_heatmap )
 
 ```
 

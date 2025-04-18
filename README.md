@@ -5,9 +5,10 @@ Bzea target sequencing of HPC1 and nitrogen genes
 # Table of contents
 
 - [Targseq](#targseq)
+- [Table of contents](#table-of-contents)
   - [Part 1: Get Target sequences](#part-1-get-target-sequences)
   - [Part 2: De novo assembly of target sequencing data](#part-2-de-novo-assembly-of-target-sequencing-data)
-
+  - [Part 3: Phylogeny estimation](#part-3-phylogeny-estimation)
 ## Part 1: Get Target sequences
 ```mermaid
 flowchart TD
@@ -105,3 +106,83 @@ flowchart TD
         gene_aligned.fasta"]
     end
 ```
+## Part 3: Phylogeny estimation
+
+```mermaid
+flowchart TD
+    subgraph "Setup"
+        A["Input Files
+        - hpc1_aligned.fasta (Alignment)
+        - seqid_label.csv (Metadata)"] --> B["Environment Setup
+        - BiocManager
+        - Biostrings
+        - tidyverse
+        - ape
+        - phangorn
+        - phytools
+        - ggtree"]
+    end
+    
+    subgraph "Step 1: Data Processing"
+        B --> C["Read Input Files
+        - Read alignment (readDNAStringSet)
+        - Read metadata (read.csv)"]
+        C --> D["Create Name Mapping
+        - Extract sequence IDs
+        - Join with metadata
+        - Filter to match sequences"]
+        D --> E["Relabel Sequences
+        - Replace technical IDs with
+        meaningful taxonomic labels"]
+        E --> F["Trim Alignment
+        - Focus on region starting 
+        from position 2226"]
+    end
+    
+    subgraph "Step 2: Variant Analysis"
+        F --> G["Extract Variant Information
+        - A204T variant
+        - I211V variant
+        - Convert to REF/ALT format"]
+        G --> H["Write Processed Alignment
+        - Save relabeled & trimmed alignment"]
+    end
+    
+    subgraph "Step 3: Phylogenetic Analysis"
+        H --> I["Build Full Phylogenetic Tree
+        - Convert to phyDat format
+        - Calculate distance matrix (JC69)
+        - Build UPGMA tree"]
+        I --> J["Tree Manipulation
+        - Rotate tree (B73 at top)
+        - Save tree in Newick format"]
+    end
+    
+    subgraph "Step 4: Full Tree Visualization"
+        J --> K["Create Variant Heatmap Tree
+        - Add variant data
+        - Add ancestry information
+        - Color tips by ancestry"]
+        K --> L["Add Multiple Alignment
+        - Combine tree with alignment view
+        - Save as PDF and PNG"]
+    end
+    
+    subgraph "Step 5: Subset Analysis"
+        J --> M["Create Donor Subset
+        - Filter for donor ancestry + B73
+        - Extract subset alignment
+        - Build new tree for subset"]
+        M --> N["Visualize Donor Subset
+        - Create variant heatmap
+        - Add alignment visualization
+        - Save as PDF and PNG"]
+    end
+    
+    style A fill:#f9f9f9,stroke:#333,stroke-width:1px
+    style F fill:#e6f3ff,stroke:#333,stroke-width:1px
+    style G fill:#e6f3ff,stroke:#333,stroke-width:1px
+    style J fill:#e6f3ff,stroke:#333,stroke-width:1px
+    style L fill:#f9fff9,stroke:#333,stroke-width:1px
+    style N fill:#f9fff9,stroke:#333,stroke-width:1px
+```  

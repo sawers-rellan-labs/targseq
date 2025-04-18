@@ -65,14 +65,10 @@ quartz(height=12); print(tree_plot)
 
 pal <-c("Recurrent" = "tomato", "Donor" = "royalblue")
 
-quartz()
 tree_plot <- tree_plot %<+% taxa_info  +
   geom_tippoint(aes(color = ancestry_call ), position = position_nudge(x = 0.0015)) +
   scale_color_manual(values=pal) +
   theme(legend.position = c(0.25,0.5))
-
-
-quartz(height=12); print(tree_plot)
 
 p <- ggtree(rotated_tree, ladderize = FALSE) %<+% 
   taxa_info  + 
@@ -83,9 +79,6 @@ p <- ggtree(rotated_tree, ladderize = FALSE) %<+%
 p2 <- msaplot(tree_plot, fasta = aln_file, 
               offset = 0.05, width = 0.6)  +
   theme(legend.position = c(0.25,0.5))
-
-
-quartz(height=12); print(p2)
 
 # Save the tree with alignment visualization
 ggsave(p2, file = file.path(project_dir, "hpc1_tree_alignment.png"), 

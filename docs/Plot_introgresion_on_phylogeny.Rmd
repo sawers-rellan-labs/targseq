@@ -46,7 +46,7 @@ Let's set up our directory structure and read our input files:
 
 ```{r read_inputs}
 # Create a project directory if it doesn't exist
-project_dir <- "/pathway_to/tree_plotting"
+project_dir <- "~/Desktop/tree_plotting"
 if (!dir.exists(project_dir)) {
   dir.create(project_dir)
 }
@@ -156,13 +156,14 @@ cat("Renamed alignment written to:", output_alignment, "\n")
 Now we can extract information for both variants using our function:
 
 ```{r extract_variants}
+library(targseq)
 # Define our variants
 variants <- data.frame(
   name = c("A204T","I211V"),
   pattern = c( "GCCGTGGCGTGGCGC", "ATCACCCGC")
 )
 
-variant_data <- get_variant_gt(variants,alignment)
+variant_data <- get_variant_gt(variants,trimmed_alignment)
 variant_data$A204T<- c("ALT","REF")[as.factor(variant_data$A204T)]
 variant_data$I211V<- c("REF","ALT")[as.factor(variant_data$I211V)]
 rownames(variant_data)<- name_swap$label_3
@@ -230,7 +231,7 @@ Now let's apply our rotation function and create plots using ggtree:
 ```{r ggtree_full_visualization}
 # First, ensure row names in our metadata match the tree's tip labels
 # This is critical for proper data mapping in ggtree
-
+library(targseq)
 
 # Rotate the tree to put B73 reference at the top
 # This uses our custom pivot_on function from the previous section
@@ -241,42 +242,39 @@ tree_file <- file.path(project_dir, "hpc1_UPGMA.tre")
 write.tree(out_tree, file = tree_file)
 cat("Full phylogenetic tree saved to:", tree_file, "\n")
 
-# Create a basic tree visualization with the alignment
-# This provides a comprehensive view of sequence difference
+# Change coding of the genotype to REF/ALT  
+variant_data$A204T<- c("ALT","REF")[as.factor(variant_data$A204T)]
+variant_data$I211V<- c("REF","ALT")[as.factor(variant_data$I211V)]
+rownames(variant_data)<- names(trimmed_alignment)
 
-# Ensure ancestry call is properly formatted as a factor
-# Note how we specify the order of levels to control the color scheme
-variant_data <- variant_data[out_tree$tip.label,]
-rownames(variant_data) <- out_tree$tip.label
-tree_data  <- name_swap %>% select(label= label_3,ancestry_call) # I need  this label field
-tree_data  <- tree_data[out_tree$tip.label, ,drop =FALSE]
 
-pal <- c ("Recurrent" = "tomato", "Donor" = "royalblue")
+taxa_info <- name_swap[out_tree $tip.label,] %>%
+  dplyr::select(label=label_3,ancestry_call)
 
-variant_heatmap <- create_variant_heatmap_tree( 
+# Create visualization
+
+tree_plot <- create_variant_heatmap_tree(
   tree = out_tree, 
-  data = variant_data
-  ) %<+% tree_data  +
-  geom_tippoint(aes(color = ancestry_call), position = position_nudge(x = 0.0015)) +
+  data = variant_data)
+
+pal <-c("Recurrent" = "tomato", "Donor" = "royalblue")
+
+tree_plot <- tree_plot %<+% taxa_info  +
+  geom_tippoint(aes(color = ancestry_call ), position = position_nudge(x = 0.0015)) +
   scale_color_manual(values=pal) +
   theme(legend.position = c(0.25,0.5))
 
-output_heatmap <- file.path(project_dir, "hpc1_all_samples_variants.pdf")
-  
-ggsave(variant_heatmap, file = output_heatmap,height =12)
+ggsave(tree_plot, file = file.path(project_dir, "hpc1_all_samples_tre.pdf"), 
+       height = 12, width = 7, units = "in")
 
-# Add multiple alignment overview
 
-# Create a combination plot with both the tree+heatmap and alignment visualization
-p2 <- msaplot(variant_heatmap, 
-              fasta = file.path(project_dir, "hpc1_nice_labels.fasta"), 
-              offset = 0.05, width = 0.6) +
-      theme(legend.position = "none")
+p2 <- msaplot(tree_plot, fasta = output_alignment, 
+              offset = 0.05, width = 0.6)  +
+  theme(legend.position = c(0.25,0.5))
 
-# Save both visualization types
-ggsave(p2, file = file.path(project_dir, "hpc1_all_samples_aln.pdf"), 
-       height = 12, width = 9, units = "in")
-
+# Save the tree with alignment visualization
+ggsave(p2, file = file.path(project_dir, "hpc1_tree_alignment.png"), 
+       height = 12, width = 7, units = "in")
 
 ```
 
@@ -291,84 +289,61 @@ cat("B73 reference identified as:", b73_label, "\n")
 
 # Create a subset of taxa with donor ancestry plus B73
 donor_subset <- name_swap %>%
-  filter(founder_ancestry == "Donor" | label_2 == b73_label)
+  filter(ancestry_call == "Donor" | label_2 == b73_label)
 
 # Check how many taxa we have in our subset
 cat("Number of taxa in donor subset:", nrow(donor_subset), "\n")
 
 # Extract the subset of sequences from our alignment
-donor_alignment <- trimmed_alignment[donor_subset$label_2]
+donor_alignment <- trimmed_alignment[donor_subset$label_3]
 
 # Write the subset alignment to a file
 donor_alignment_file <- file.path(project_dir, "hpc1_donor_subset.fasta")
 writeXStringSet(donor_alignment, donor_alignment_file, format="fasta")
 cat("Donor subset alignment written to:", donor_alignment_file, "\n")
 
-
-
-  
 # Build a new tree for the donor subset
 donor_aln <- read.dna(donor_alignment_file, format="fasta")
 donor_phyDat <- phyDat(donor_aln, type = "DNA", levels = NULL)
 donor_dist <- dist.ml(donor_phyDat, model="JC69")
 donor_UPGMA <- ladderize(upgma(donor_dist), right = FALSE)
-
+b73_label<-names(donor_alignment)[1]
 # Rotate the donor tree to put B73 at the top
-donor_tree <- pivot_on(donor_UPGMA, b73_label) 
+donor_tree <- pivot_on(donor_UPGMA,b73_label) 
 
 # Save the donor subset tree
 donor_tree_file <- file.path(project_dir, "hpc1_donor_subset.tre")
 write.tree(donor_tree, file = donor_tree_file)
 cat("Donor subset tree saved to:", donor_tree_file, "\n")
 
-# addd multiple alignment
-
-p <- ggtree(donor_tree,ladderize = FALSE) + geom_tiplab(size=3)
-p2 <- msaplot(p, fasta = donor_alignment_file, offset=0.05, width=0.6)+
-        theme(legend.position = "none")
-ggsave(p2, file= file.path(project_dir,"hpc1_donor_tree_alignment.png"), height=12, width=7, units = "in")
-  
-# Assuming you already have:
-# 1. Your tree object (e.g., out_tree or donor_tree)
-# 2. Your data with variant information (variants_ref_alt or donor_ref_alt)
-
-# First, ensure your variant data has the correct REF/ALT coding
-# For example:
-variant_data <- name_swap[donor_subset$label_2,] %>%
-  mutate(
-      ancestry_call = case_when(
-      founder_ancestry == "Recurrent" ~ "REF",
-      founder_ancestry  == "Donor" ~ "ALT",
-      TRUE ~ as.character(A204T) 
-    ),
-    A204T_state = case_when(
-      A204T == "A" ~ "ALT",
-      A204T == "G" ~ "REF",
-      TRUE ~ as.character(A204T)
-    ),
-    I211V_state = case_when(
-      I211V == "G" ~ "ALT",
-      I211V == "A" ~ "REF",
-      TRUE ~ as.character(I211V)
-    )
-  )  %>%   
- select(ancestry= ancestry_call, A204T=A204T_state, I211V=I211V_state)
 
 
-# Convert state columns to factors
-variant_data$ancestry <- factor(variant_data$ancestry, levels = c("REF","ALT"))
-variant_data$A204T <- factor(variant_data$A204T, levels = c("REF","ALT"))
-variant_data$I211V <- factor(variant_data$I211V, levels = c("REF","ALT"))
+taxa_info <- donor_subset[donor_tree$tip.label,] %>%
+  dplyr::select(label=label_3,ancestry_call)
 
-# Generate and save the heatmap visualization
-output_heatmap <- file.path(project_dir,"hpc1_donor_subset.pdf")
-variant_heatmap <- create_variant_heatmap_tree(donor_tree, variant_data)
+# Create visualization
 
-p2 <- msaplot(variant_heatmap, fasta = donor_alignment_file , offset=0.05, width=0.6) +
-  theme(legend.position = "none")
-ggsave(p2, file= file.path(project_dir,"hpc1_donor_subset.png"), height=12, width=9, units = "in")
-ggsave(variant_heatmap, file= output_heatmap )
+tree_plot <- create_variant_heatmap_tree(
+  tree = donor_tree, 
+  data = variant_data[donor_tree$tip.label,])
 
+pal <-c("Recurrent" = "tomato", "Donor" = "royalblue")
+
+tree_plot <- tree_plot %<+% taxa_info  +
+  geom_tippoint(aes(color = ancestry_call ), position = position_nudge(x = 0.0015)) +
+  scale_color_manual(values=pal) +
+  theme(legend.position = c(0.25,0.5))
+
+ggsave(tree_plot, file = file.path(project_dir, "hpc1_donor_subset_tre.pdf"), 
+       height = 10, width = 7, units = "in")
+
+p2 <- msaplot(tree_plot, fasta = donor_alignment_file, 
+              offset = 0.05, width = 0.6)  +
+  theme(legend.position = c(0.25,0.5))
+
+# Save the tree with alignment visualization
+ggsave(p2, file = file.path(project_dir, "hpc1_donor_subset_tre.png"), 
+       height = 10, width = 7, units = "in")
 ```
 
 ## 9. Project File Structure with ggtree Outputs

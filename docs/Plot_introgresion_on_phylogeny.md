@@ -14,8 +14,6 @@ Maize Genetics Lab
 - [8. Building a Phylogenetic Tree](#8-building-a-phylogenetic-tree)
 - [10. Visualizing the Full Tree with
   ggtree](#10-visualizing-the-full-tree-with-ggtree)
-- [10. Visualizing the Full Tree with
-  ggtree](#10-visualizing-the-full-tree-with-ggtree-1)
 - [11. Subsetting and Visualizing Donor Taxa with
   ggtree](#11-subsetting-and-visualizing-donor-taxa-with-ggtree)
 - [12. Project File Structure with ggtree
@@ -246,8 +244,6 @@ library(ggplot2)    # For plotting
 library(ggnewscale) # For multiple color scales in the same plot
 library(dplyr)      # For data manipulation
 ```
-
-## 10. Visualizing the Full Tree with ggtree
 
 Now let’s apply our rotation function and create plots using ggtree:
 

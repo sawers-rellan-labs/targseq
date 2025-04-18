@@ -227,8 +227,6 @@ library(ggnewscale) # For multiple color scales in the same plot
 library(dplyr)      # For data manipulation
 ```
 
-## 10. Visualizing the Full Tree with ggtree
-
 Now let's apply our rotation function and create plots using ggtree:
 
 ```{r ggtree_full_visualization}

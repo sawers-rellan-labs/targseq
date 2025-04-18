@@ -112,24 +112,24 @@ names(original_alignment) <- trimmed_ids
 
 # Create a mapping dataframe that connects sequence IDs with taxonomic labels
 # We also keep track of the original order in the alignment
-name_swap <- data.frame(seqid = trimmed_ids) %>%
+name_map <- data.frame(seqid = trimmed_ids) %>%
   mutate(aln_order = row_number()) %>%
   inner_join(metadata)
 
 # Filter to include only sequences that exist in our alignment
-name_swap <- name_swap %>%
+name_map <- name_map %>%
   dplyr::filter(seqid %in% names(original_alignment)) %>%
   rename(ancestry_call = "founder_ancestry")
-rownames(name_swap) <- name_swap$label_3
+rownames(name_map) <- name_map$label_3
 
 # Report on mapping success
-cat("Sequences successfully mapped:", nrow(name_swap), "\n")
+cat("Sequences successfully mapped:", nrow(name_map), "\n")
 
 # Filter the alignment to keep only sequences we have metadata for
-filtered_alignment <- original_alignment[name_swap$seqid]
+filtered_alignment <- original_alignment[name_map$seqid]
 
 # Now replace the technical IDs with meaningful labels from label_3 column
-names(filtered_alignment) <- name_swap$label_3
+names(filtered_alignment) <- name_map$label_3
 
 # Store counts for later use
 n_taxa <- length(filtered_alignment)
@@ -267,7 +267,7 @@ write.tree(out_tree, file = tree_file)
 cat("Full phylogenetic tree saved to:", tree_file, "\n")
 
 # Extract ancestry information for visualization
-taxa_info <- name_swap[out_tree$tip.label, ] %>%
+taxa_info <- name_map[out_tree$tip.label, ] %>%
   dplyr::select(label=label_3, ancestry_call)
 
 # Create tree visualization with variant heatmap
@@ -316,11 +316,11 @@ Now we'll create a subset analysis focusing only on taxa with donor ancestry plu
 
 ```{r ggtree_subset_visualization}
 # First, identify B73 in our dataset
-b73_label <- grep("B73", name_swap$label_2, value = TRUE)[1]
+b73_label <- grep("B73", name_map$label_2, value = TRUE)[1]
 cat("B73 reference identified as:", b73_label, "\n")
 
 # Create a subset of taxa with donor ancestry plus B73
-donor_subset <- name_swap %>%
+donor_subset <- name_map %>%
   filter(ancestry_call == "Donor" | label_2 == b73_label)
 
 # Check how many taxa we have in our subset

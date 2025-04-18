@@ -9,19 +9,17 @@ Maize Genetics Lab
   Table](#3-creating-the-name-mapping-table)
 - [4. Trimming the Alignment](#4-trimming-the-alignment)
 - [5. Extracting Variant Information](#5-extracting-variant-information)
-- [7. Writing the Processed Alignment to a New
-  File](#7-writing-the-processed-alignment-to-a-new-file)
-- [8. Building a Phylogenetic Tree](#8-building-a-phylogenetic-tree)
-- [10. Visualizing the Full Tree with
-  ggtree](#10-visualizing-the-full-tree-with-ggtree)
-- [11. Subsetting and Visualizing Donor Taxa with
-  ggtree](#11-subsetting-and-visualizing-donor-taxa-with-ggtree)
-- [12. Project File Structure with ggtree
-  Outputs](#12-project-file-structure-with-ggtree-outputs)
-- [13. Advantages of ggtree Over Base R
-  Plotting](#13-advantages-of-ggtree-over-base-r-plotting)
-- [14. Conclusion](#14-conclusion)
-- [15. Troubleshooting Tips](#15-troubleshooting-tips)
+- [6. Building a Phylogenetic Tree](#6-building-a-phylogenetic-tree)
+- [7. Visualizing the Full Tree with
+  ggtree](#7-visualizing-the-full-tree-with-ggtree)
+- [8. Subsetting and Visualizing Donor Taxa with
+  ggtree](#8-subsetting-and-visualizing-donor-taxa-with-ggtree)
+- [9. Project File Structure with ggtree
+  Outputs](#9-project-file-structure-with-ggtree-outputs)
+- [10. Advantages of ggtree Over Base R
+  Plotting](#10-advantages-of-ggtree-over-base-r-plotting)
+- [11. Conclusion](#11-conclusion)
+- [12. Troubleshooting Tips](#12-troubleshooting-tips)
 
 This tutorial walks through a complete workflow for processing maize
 genetic data, focusing on:
@@ -153,6 +151,15 @@ trimmed_alignment <- filtered_alignment[trimmedRanges]
 # Verify the trimmed alignment
 cat("Trimmed alignment length:", width(trimmed_alignment)[1], "bp\n")
 head(names(trimmed_alignment))
+
+# Writing the Processed Alignment to a New File
+# Let's save our relabeled and trimmed alignment:
+# Define output file path
+output_alignment <- file.path(project_dir, "hpc1_nice_labels.fasta")
+
+# Write the renamed alignment to a new file
+writeXStringSet(trimmed_alignment, output_alignment, format="fasta")
+cat("Renamed alignment written to:", output_alignment, "\n")
 ```
 
 ## 5. Extracting Variant Information
@@ -172,20 +179,7 @@ variant_data$I211V<- c("REF","ALT")[as.factor(variant_data$I211V)]
 rownames(variant_data)<- name_swap$label_3
 ```
 
-## 7. Writing the Processed Alignment to a New File
-
-Let’s save our relabeled and trimmed alignment:
-
-``` r
-# Define output file path
-output_alignment <- file.path(project_dir, "hpc1_nice_labels.fasta")
-
-# Write the renamed alignment to a new file
-writeXStringSet(trimmed_alignment, output_alignment, format="fasta")
-cat("Renamed alignment written to:", output_alignment, "\n")
-```
-
-## 8. Building a Phylogenetic Tree
+## 6. Building a Phylogenetic Tree
 
 Now we’ll build and visualize a phylogenetic tree from our processed
 alignment:
@@ -217,7 +211,7 @@ hpc1_UPGMA <- ladderize(upgma(dna_dist), right = FALSE)
 plot(hpc1_UPGMA, cex = 0.7, main = "UPGMA Tree Before Rotation")
 ```
 
-## 10. Visualizing the Full Tree with ggtree
+## 7. Visualizing the Full Tree with ggtree
 
 Now we’ll create comprehensive tree visualizations with variant
 information using ggtree. This approach provides more flexibility and
@@ -298,7 +292,7 @@ ggsave(p2, file = file.path(project_dir, "hpc1_all_samples_aln.pdf"),
        height = 12, width = 9, units = "in")
 ```
 
-## 11. Subsetting and Visualizing Donor Taxa with ggtree
+## 8. Subsetting and Visualizing Donor Taxa with ggtree
 
 Now we’ll create a subset analysis focusing only on taxa with donor
 ancestry plus the B73 reference:
@@ -389,7 +383,7 @@ ggsave(p2, file= file.path(project_dir,"hpc1_donor_subset.png"), height=12, widt
 ggsave(variant_heatmap, file= output_heatmap )
 ```
 
-## 12. Project File Structure with ggtree Outputs
+## 9. Project File Structure with ggtree Outputs
 
 Let’s examine the complete file structure with all our inputs and
 outputs:
@@ -420,7 +414,7 @@ outputs:
 
     ## └── hpc1_donor_subset_with_heatmap.png # Output: Donor subset with heatmap and alignment
 
-## 13. Advantages of ggtree Over Base R Plotting
+## 10. Advantages of ggtree Over Base R Plotting
 
 The ggtree package offers several advantages over base R plotting
 functions for phylogenetic trees:
@@ -449,7 +443,7 @@ functions for phylogenetic trees:
 8.  **Heatmap Integration**: The gheatmap function allows easy addition
     of heatmaps alongside trees.
 
-## 14. Conclusion
+## 11. Conclusion
 
 This tutorial demonstrated how to use ggtree to create advanced
 visualizations of phylogenetic trees with variant and ancestry
@@ -464,7 +458,7 @@ These ggtree-based visualizations are more flexible and
 publication-ready compared to the base R plotting methods used
 previously.
 
-## 15. Troubleshooting Tips
+## 12. Troubleshooting Tips
 
 - **Missing data issues**: Use the `%<+%` operator from ggtree to
   properly map data to the tree tips.

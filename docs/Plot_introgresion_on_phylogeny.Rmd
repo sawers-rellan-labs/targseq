@@ -316,8 +316,6 @@ donor_tree_file <- file.path(project_dir, "hpc1_donor_subset.tre")
 write.tree(donor_tree, file = donor_tree_file)
 cat("Donor subset tree saved to:", donor_tree_file, "\n")
 
-
-
 taxa_info <- donor_subset[donor_tree$tip.label,] %>%
   dplyr::select(label=label_3,ancestry_call)
 

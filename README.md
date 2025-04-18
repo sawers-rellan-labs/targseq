@@ -1,4 +1,4 @@
-# Targetseq
+# Targseq
 Bzea target sequencing of HPC1 and nitrogen genes
 
 ## Part 1: Get Target sequences

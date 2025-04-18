@@ -4,7 +4,7 @@ Bzea target sequencing of HPC1 and nitrogen genes
 ## Part 1: Get Target sequences
 ```mermaid
 flowchart TD
-    A[Start: B73 gene targets] --> B[Download reference genomes]
+    A[Start: B73 gene targets] --> B[Download ref genomes]
     B --> C[Create BLAST databases]
     
     C --> D{OrthoMCL available?}
@@ -21,39 +21,27 @@ flowchart TD
     J --> K[Extract target sequences with blastdbcmd]
     K --> L[Rename sequences with gene symbols]
     L --> M[Combine sequences into final FASTA files]
-    M --> N[End: Target sequences with flanking regions]
     
     subgraph "Input Files"
     A1[B73_gene_targets.tab]
     end
     
     subgraph "Reference Data"
-    B1[B73 genome & annotation]
-    B2[TIL01 parviglumis genome & annotation]
-    B3[TIL18 mexicana genome & annotation]
-    B4[TdFL Tripsacum genome & annotation]
+    B1[Fasta Genomes]
+    B2[GFF3 Annotations]
     end
     
     subgraph "Output Files"
-    O1[B73_target_sequences.fasta]
-    O2[TIL01_target_sequences.fasta]
-    O3[TIL18_target_sequences.fasta]
-    O4[TdFL_target_sequences.fasta]
-    O5[all_taxa_target_sequences.fasta]
+    O1[GENOME_target_sequences.fasta Target sequences with flanking regions]
     end
     
     A1 --> A
     B1 --> B
     B2 --> B
-    B3 --> B
-    B4 --> B
+
     
     M --> O1
-    M --> O2
-    M --> O3
-    M --> O4
-    M --> O5
-```
+``` 
 
 ## Part 2: De novo assembly of target sequencing data
 
@@ -71,7 +59,7 @@ flowchart TD
         - B73_target_sequences.fasta
         - TIL18_target_sequences.fasta"] --> B
     end
-    
+  
     subgraph "Step 1: Read Cleaning"
         B --> D["q_clean_reads.sh"]
         D --> |"fastp
@@ -115,13 +103,5 @@ flowchart TD
     - Phylogenetic analysis
     - SNP identification
     - Evolutionary studies
-    - Primer design"]
-    
-    style A fill:#f9f9f9,stroke:#333,stroke-width:1px
-    style C fill:#f9f9f9,stroke:#333,stroke-width:1px
-    style E fill:#e6f3ff,stroke:#333,stroke-width:1px
-    style G fill:#e6f3ff,stroke:#333,stroke-width:1px
-    style I fill:#e6f3ff,stroke:#333,stroke-width:1px
-    style K fill:#e6f3ff,stroke:#333,stroke-width:1px
-    style L fill:#f9fff9,stroke:#333,stroke-width:1px
-    ```
+    - Primer design"]  
+```

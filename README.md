@@ -11,12 +11,11 @@ flowchart TD
     D -->|Yes| E1[Extract orthologs from OrthoMCL]
     D -->|No| E2[BLAST against each genome]
     
-    E1 --> F[BLAST against Tripsacum]
+    E1 --> F[Create Ortholog Table]
     E2 --> F
     
-    F --> G[Create gene_targets_orthogroup.tab]
-    G --> H[Extract canonical transcripts for each species]
-    H --> I[Add 2kb flanking regions to coordinates]
+    F --> H[Extract canonical transcripts]
+    H --> I[Add 2kb flanking regions]
     I --> J[Create taxa database file]
     J --> K[Extract target sequences with blastdbcmd]
     K --> L[Rename sequences with gene symbols]
@@ -98,10 +97,4 @@ flowchart TD
         - auto algorithm"| K["Multiple Sequence Alignments
         gene_aligned.fasta"]
     end
-    
-    K --> L["Analysis & Visualization
-    - Phylogenetic analysis
-    - SNP identification
-    - Evolutionary studies
-    - Primer design"]  
 ```

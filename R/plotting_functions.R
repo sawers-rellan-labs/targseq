@@ -14,7 +14,7 @@
 create_variant_heatmap_tree <- function(tree, data, output_file,...) {
   # Create base tree
   p <- ggtree(tree, ladderize = FALSE) +
-    geom_tiplab(size = 2.5, hjust = -0.3) +
+    geom_tiplab(size = 2.5, offset = 0.002, align = TRUE,linesize = 0.1) +
     ggtree::vexpand(.1, 1) +
     theme_tree2()
   

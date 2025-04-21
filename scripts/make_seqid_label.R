@@ -45,6 +45,7 @@ target_genes <- c("hpc1", "gpat15", "nrg11", "ipt6", "tcptf9", "nlp15", "gdsl")
 final_selection <- read.csv("~/Desktop/FINAL_SELECTION.csv")
 
 # Read and preprocess sample annotation data
+
 sample_annotation <- read.csv("~/Desktop/sample_annotation.csv") %>%
   select(fastq_prefix, fastq_sample) %>%
   arrange(fastq_prefix, fastq_sample) %>%
@@ -132,6 +133,9 @@ ref_label <- lapply(target_genes, FUN = function(x){
   # Parse the modified string as a data frame
   read.table(text = data_string, header = TRUE, na.strings = "NA")
 }) %>% bind_rows()
+
+write_csv(ref_label, "~/Desktop/ref_label.csv")
+
 
 #-------------------------------------------------------------------------------
 # 6. FINAL DATA ASSEMBLY AND EXPORT

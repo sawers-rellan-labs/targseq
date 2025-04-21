@@ -77,7 +77,7 @@ ggtree(rotated_tree,ladderize = FALSE) %<+% taxa_info[,-1] +
 # 6. Add ancestry information
 ancestry_palette <- c("Recurrent" = "tomato", "Donor" = "royalblue")
 enhanced_tree <- tree_plot %<+% taxa_info[,-1] +
-  geom_tippoint(aes(color = ancestry_call),) +
+  geom_tippoint(aes(color = ancestry_call), position = position_nudge(x = 0.0015)) +
    scale_color_manual(values = ancestry_palette) +
   theme(legend.position = c(0.25, 0.5))
 

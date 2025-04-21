@@ -1,4 +1,4 @@
-seqid,founder_ancestry,ancestry_preffix,label_1,label_2,label_3
+seqid,ancestry_call,ancestry_preffix,label_1,label_2,label_3
 hpc1_S60,Donor,D,Bals_S60,D_Zv_Bals_0120_S60,Zv_Bals_0120_S60
 hpc1_S50,Donor,D,Bals_S50,D_Zv_Bals_0060_S50,Zv_Bals_0060_S50
 hpc1_S47,Donor,D,Zlux_S47,D_Zl_Zlux_0040_S47,Zl_Zlux_0040_S47

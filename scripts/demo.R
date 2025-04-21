@@ -84,9 +84,7 @@ taxa_info <- read.csv(metadata_file)
 rownames(taxa_info) <- taxa_info$seqid
 
 # Rename ancestry column for consistency
-taxa_info <- taxa_info %>%
-  rename(ancestry_call = "founder_ancestry")
-
+taxa_info <- taxa_info 
 #===========================================================================
 # 3. VARIANT DETECTION
 #===========================================================================
@@ -210,3 +208,4 @@ ggsave(alignment_tree,
 cat(sprintf("Saved tree with alignment to: %s\n", output_file))
 
 cat("Demo completed successfully!\n")
+

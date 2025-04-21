@@ -17,122 +17,104 @@ if (!dir.exists(project_dir)) {
 # Set file paths within the project directory
 # data from
 # https://docs.google.com/spreadsheets/d/1gsZ017XvS_xLZkXzBmKT7e4DL5aiEld8AcxfeJ2KNwc/edit?gid=1345415053#gid=1345415053&fvid=1451101345
+# Load necessary libraries
+library(dplyr)
+library(tidyr)
 
-line_info_file <- file.path(project_dir, "FINAL_SELECTION.csv")
-sample_annotation_file <- file.path(project_dir, "sample_annotation.csv")
+# Read input files
+final_selection <- read.csv("~/Desktop/FINAL_SELECTION.csv")
 
-# Import data from local CSV files
-line_info <- read_csv(line_info_file)
-sample_annotation <- read_csv(sample_annotation_file)
+sample_annotation <- read.csv("~/Desktop/sample_annotation.csv") %>%
+  select(fastq_prefix,fastq_sample) %>%
+  arrange(fastq_prefix,fastq_sample) %>%
+  distinct() %>%
+  # Remove "S" prefix from sample numbers
+  mutate(sample_n = gsub("S","",fastq_sample, fixed=TRUE) %>% as.numeric()) %>%
+  arrange(sample_n)
 
-# Display the first few rows of line_info
-print("Input data preview:")
-print(head(line_info))
+target_genes <- c("hpc1", "gpat15", "nrg11", "ipt6", "tcptf9", "nlp15", "gdsl")
+# Join the datasets
+seqid_label_wide <- final_selection%>%
+  left_join(sample_annotation, by = c("fastq_prefix", "fastq_sample"))
 
-# Create sequence ID table with informative labels
-seqid_label <- line_info %>%
-  # Select and rename columns for clarity
-  select(
-    sample,                     # Sample identifier
-    donor_accession = accession, # Rename for clarity
-    taxa,                       # Taxonomic information
-    introgression = hpc1,       # Introgression status (0/1)
-    label_1 = label             # Original label
+# Pivot the data from wide to long format
+seqid_label <- seqid_label_wide  %>%
+  dplyr::select(-genes, -hpc1_ancestry_mismatch) %>%
+  pivot_longer(
+    cols = all_of(target_genes),
+    names_to = "gene",
+    values_to = "ancestry_call"
   ) %>%
+  select(gene,sample_n,fastq_sample, everything()) %>%
+  arrange(gene,sample_n)
+
+colnames(seqid_label)
+
+seqid_label <- seqid_label %>%
   # Create new metadata columns through transformations
   mutate(
     # Extract prefix from donor accession (before the first period)
     maizegdb_prefix = gsub("\\..*", "", donor_accession, perl = TRUE),
     
     # Create standardized sequence ID by combining "hpc1" and sample
-    seqid = paste("hpc1", sample, sep = "_"),
+    seqid = paste(gene, fastq_sample, sep = "_"),
+    
+    label_1 = seqid,
     
     # Copy sample ID for reference
-    seqid_sample = sample,
-    
-    # Remove "S" prefix from sample numbers
-    sample_n = gsub("S", "", sample, fixed = TRUE),
+    seqid_sample = fastq_sample,
     
     # Extract suffix from donor accession (after the last period)
-    donor_sufix = gsub(".*\\.", "", donor_accession, perl = TRUE),
+    donor_suffix = gsub(".*\\.", "", donor_accession, perl = TRUE),
+    
+    ancestry_call =  factor(ancestry_call,levels= c("Recurrent","Donor")),
     
     # Create ancestry prefix: "R" for Recurrent (introgression=0), "D" for Donor (introgression=1)
-    ancestry_preffix = c("R", "D")[introgression + 1],
-    
-    # Create full ancestry label: "Recurrent" or "Donor"
-    ancestry = c("Recurrrent", "Donor")[introgression + 1]
+    ancestry_prefix = c("R", "D")[ancestry_call],
   ) %>%
   # Select and reorder columns for final output
   select(
-    seqid, seqid_sample, sample_n, maizegdb_prefix, taxa, 
-    donor_accession, taxa, donor_sufix, ancestry, ancestry_preffix, label_1
+    gene,seqid, seqid_sample, sample_n, maizegdb_prefix, taxa, 
+    donor_accession, taxa, donor_suffix, ancestry_call, ancestry_prefix, label_1
   )
+
+
+
+ref_string <- "gene sample_n seqid  ancestry_call  ancestry_prefix donor_accession label_1 label_2 label_3
+              hpc1 NA hpc1_B73  Recurrent  R NA  hpc1_B73 R_Zm_B73 Zm_B73
+              hpc1 NA  hpc1_TIL18  Donor  D NA hpc1_TIL18 D_Zx_TIL18 Zx_TIL18"
+
+ref_label <- lapply(target_genes, FUN = function(x){
+  data_string <- gsub("hpc1", x,ref_string, fixed= TRUE) 
+  read.table(text =data_string, header = TRUE, na.strings = "NA")
+}) %>%  bind_rows()
+
 
 # Display the initial processing results
-print("Initial sequence ID table:")
-print(head(seqid_label))
+head(seqid_label)
+
 
 # Add additional label formats and reference genomes
-seqid_label <- rbind(
-  # Process existing entries with additional labels
-  seqid_label %>%
-    mutate(
-      # Create label_2: Combined format with ancestry prefix
-      # This keeps taxonomic order from general to specific
-      label_2 = paste(ancestry_preffix, maizegdb_prefix, taxa, donor_sufix, seqid_sample, sep = "_"),
-      
-      # Create label_3: Format without ancestry prefix
-      label_3 = paste(maizegdb_prefix, taxa, donor_sufix, seqid_sample, sep = "_")
-    ) %>% 
-    select(seqid, founder_ancestry = ancestry, ancestry_preffix, starts_with("label")),
-  
-  # Add B73 reference genome entry (Recurrent)
-  data.frame(
-    seqid = "hpc1_B73", 
-    founder_ancestry = "Recurrent", 
-    ancestry_preffix = "R",
-    label_1 = "B73", 
-    label_2 = "R_Zm_B73", 
-    label_3 = "Zm_B73",
-    stringsAsFactors = FALSE
-  ),
-  
-  # Add TIL18 reference genome entry (Donor)
-  data.frame(
-    seqid = "hpc1_TIL18", 
-    founder_ancestry = "Donor", 
-    ancestry_preffix = "D",
-    label_1 = "TIL18", 
-    label_2 = "D_Zx_TIL18", 
-    label_3 = "Zx_TIL18",
-    stringsAsFactors = FALSE
-  )
-)
+seqid_label <-  rbind ( seqid_label %>%
+                          # Process existing entries with additional labels
+                          
+                          mutate(
+                            # Create label_2: Combined format with ancestry prefix
+                            label_1 = seqid,
+                            
+                            # Create label_2: Combined format with ancestry prefix
+                            label_2 = paste(ancestry_prefix, maizegdb_prefix, taxa, donor_suffix, seqid_sample, sep = "_"),
+                            
+                            # Create label_3: Format without ancestry prefix
+                            label_3 = paste(maizegdb_prefix, taxa, donor_suffix, seqid_sample, sep = "_")
+                          ) %>% 
+                          select(gene,sample_n,seqid, ancestry_call, ancestry_prefix, donor_accession, starts_with("label")) %>%
+                          group_by(gene) %>%
+                          arrange(gene,sample_n),
+                        ref_label)
+
+write.csv(seqid_label,file="~/Desktop/seqid_label.csv",row.names = FALSE)
 
 # Display the final table
-print("Final sequence ID table with reference genomes:")
-print(tail(seqid_label))
+tail(seqid_label)
 
-# Set output file path
-output_file <- file.path(project_dir, "seqid_label_table.csv")
-
-# Write the table to CSV
-write.csv(seqid_label, output_file, quote = FALSE, row.names = FALSE)
-
-cat("Sequence ID table successfully created and saved to:", output_file, "\n")
-
-# Data Exploration and Analysis
-cat("\n--- Data Exploration ---\n")
-# Summary statistics
-cat("Total number of entries:", nrow(seqid_label), "\n")
-cat("Distribution by ancestry:\n")
-print(table(seqid_label$founder_ancestry))
-
-# Example of filtering by ancestry
-donor_entries <- seqid_label %>% 
-  filter(founder_ancestry == "Donor")
-
-cat("\nDonor entries:", nrow(donor_entries), "\n")
-print(head(donor_entries))
-
-cat("\nScript execution complete.\n")

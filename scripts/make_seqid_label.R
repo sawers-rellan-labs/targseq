@@ -59,12 +59,12 @@ sample_annotation <- read.csv("~/Desktop/sample_annotation.csv") %>%
 
 # Join datasets to combine sample information with genetic data
 seqid_label_wide <- final_selection %>%
-  left_join(sample_annotation, by = c("fastq_prefix", "fastq_sample"))
+  left_join(sample_annotation)
 
 # Transform data from wide to long format (one row per gene-sample combination)
 seqid_label <- seqid_label_wide  %>%
   # Remove unnecessary columns
-  dplyr::select(-genes, -hpc1_ancestry_mismatch) %>%
+  dplyr::select(-genes) %>%
   # Pivot gene columns to long format
   pivot_longer(
     cols = all_of(target_genes),
@@ -164,4 +164,5 @@ seqid_label <- rbind(
 write.csv(seqid_label, file = "~/Desktop/seqid_label.csv", quote=FALSE, na='',row.names = FALSE)
 
 # Display the final table
+head(seqid_label)
 tail(seqid_label)

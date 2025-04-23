@@ -1,7 +1,7 @@
 Maize Phylogeny Analysis with Multiple Variants
 ================
 Maize Genetics Lab
-2025-04-22
+2025-04-23
 
 - [1. Setting up the Environment](#1-setting-up-the-environment)
 - [2. Reading Input Files](#2-reading-input-files)
@@ -92,14 +92,16 @@ Now, let’s set up our directory structure and read our input files:
 
 ``` r
 # Create a project directory if it doesn't exist
-project_dir <- "~/Desktop/tree_plotting"
+project_dir <- "tree_plotting"
 if (!dir.exists(project_dir)) {
   dir.create(project_dir)
 }
 
 # Set file paths within the project directory
-aln_file <- file.path(project_dir, "hpc1_aligned.fasta")
-metadata_file <- file.path(project_dir, "seqid_label.csv")
+aln_file <-  system.file("extdata", "hpc1_aligned.fasta", package="targseq")
+
+metadata_file <- system.file("extdata", "seqid_label.csv", package="targseq")
+
 
 # Read the mapping table with taxonomic metadata
 metadata <- read.csv(metadata_file)
@@ -311,7 +313,9 @@ name_map$seqid <- name_map$label_3
 
 # Prepare environmental parameters data
 # Here we're using elevation data from our metadata
-donor_file <- file.path(project_dir, "donor_data.csv")
+
+donor_file <-  system.file("extdata", "donor_data.csv", package="targseq")
+
 donor_data <- read.csv(donor_file ) 
 
 # Join all metadata while preserving the original alignment order
@@ -410,9 +414,25 @@ ancestry plus the B73 reference genome.
 b73_label <- grep("B73", name_map$label_3, value = TRUE)[1]
 cat("B73 reference identified as:", b73_label, "\n")
 
+# Ancestry miscalled lines
+seqid_label_file <-  system.file("extdata", "seqid_label.csv", package="targseq")
+
+seqid_label<- read.csv(seqid_label_file) 
+
+ancestry_mismatch_file <-  system.file("extdata", "ancestry_mismatch.csv", package="targseq")
+
+                      
+ancestry_miscall <- read.csv(ancestry_mismatch_file) %>% 
+  filter(locus=="hpc1") %>% 
+  dplyr::select(fastq_prefix ) %>%
+  inner_join(seqid_label)
+
 # Create a subset of taxa with donor ancestry plus B73
 donor_subset <- name_map %>%
-  filter(ancestry_call == "Donor" | label_3 == b73_label)
+  mutate(label=label_3) %>%
+  filter(ancestry_call == "Donor" | label == b73_label) %>%
+  # filter ancestry_miscalls
+  filter(!seqid %in% ancestry_miscall$seqid)
 
 # Check how many taxa we have in our subset
 cat("Number of taxa in donor subset:", nrow(donor_subset), "\n")
@@ -426,6 +446,7 @@ sequences and build a new tree:
 donor_alignment <- trimmed_alignment[donor_subset$label_3]
 
 # Write the subset alignment to a file
+
 donor_alignment_file <- file.path(project_dir, "hpc1_donor_subset.fasta")
 writeXStringSet(donor_alignment, donor_alignment_file, format="fasta")
 cat("Donor subset alignment written to:", donor_alignment_file, "\n")

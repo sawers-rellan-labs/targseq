@@ -146,7 +146,7 @@ p2 <- gheatmap(p1,
                colnames_offset_y = 0.4, hjust = 0,
                colnames_position = "top") +
   # Use diverging color palette centered at 1500m
-  scale_fill_continuous_divergingx(name = "Elevation (masl)", 
+  scale_fill_continuous_divergingx(name = "Donor Elevation (masl)", 
                                    palette = 'RdBu', 
                                    mid = 1500, 
                                    n_interp = 25) +
@@ -230,9 +230,25 @@ cat("Full analysis complete. Plot saved as 'maize_tree_alignment.png'\n")
 b73_label <- grep("B73", taxa_info$label, value = TRUE)[1]
 cat("B73 reference identified as:", b73_label, "\n")
 
+# Ancestry miscalled lines
+seqid_label_file <-  system.file("extdata", "seqid_label.csv", package="targseq")
+
+seqid_label<- read.csv(seqid_label_file) 
+
+ancestry_mismatch_file <-  system.file("extdata", "ancestry_mismatch.csv", package="targseq")
+
+ancestry_miscall <- read.csv(ancestry_mismatch_file) %>% 
+  filter(locus=="hpc1") %>%
+  inner_join(seqid_label, by =c(locus="gene","fastq_prefix"))
+
+ancestry_miscall
+
 # Create a subset of taxa with donor ancestry plus B73
 donor_subset <- taxa_info %>%
-  filter(ancestry_call == "Donor" | label == b73_label)
+  filter(ancestry_call == "Donor" | label == b73_label) %>%
+  # filter ancestry_miscalls
+  filter(!seqid %in% ancestry_miscall$seqid)
+
 
 # Check how many taxa we have in our subset
 cat("Number of taxa in donor subset:", nrow(donor_subset), "\n")
@@ -285,7 +301,7 @@ donor_p1 <- ggtree(donor_tree, ladderize = FALSE) %<+% donor_ancestry +
   # Add vertical expansion for better spacing
   ggtree::vexpand(.1, 1) +
   # Use the custom ancestry color palette
-  scale_color_manual(name="Ancestry", values = ancestry_palette) +
+  scale_color_manual(name="Ancestry call", values = ancestry_palette) +
   # Highlight B73 reference
   geom_hilight(node = which(donor_tree$tip.label == b73_label), 
                fill = "gold", alpha = 0.3) +
@@ -304,7 +320,7 @@ donor_p2 <- gheatmap(donor_p1,
                      colnames_offset_y = 0.4, hjust = 0,
                      colnames_position = "top") +
   # Use diverging color palette centered at 1500m
-  scale_fill_continuous_divergingx(name = "Elevation (masl)", 
+  scale_fill_continuous_divergingx(name = "Donor Elevation (masl)", 
                                    palette = 'RdBu', 
                                    mid = 1500, 
                                    n_interp = 25) +
@@ -318,7 +334,7 @@ donor_p3 <- gheatmap(donor_p2 + new_scale_fill(),
                      colnames_offset_y = 0.65, hjust = 0,
                      colnames_position = "top") +
   scale_fill_manual(values = ref_alt_colors, name = "Allele") +
-  theme(legend.position = c(0.25, 0.5))
+  theme(legend.position = c(0.75, 0.5))
 
 # Create subset of donor alignment for msaplot
 donor_bin_alignment <- as.DNAbin(donor_alignment)
@@ -329,9 +345,9 @@ donor_alignment_tree <- msaplot(donor_p3 + new_scale_fill(),
                                 offset = 0.06, 
                                 width = 0.5) +
   guides(fill = "none") +
-  theme(legend.position = c(0.25, 0.5))
+  theme(legend.position = c(0.25, 0.75))
 
-# Save the donor subset visualization
+# Save the donor subset visualizationx
 donor_plot_file <- file.path(project_dir, "donor_subset_tree_alignment.png")
 ggsave(donor_alignment_tree, file = donor_plot_file, height = 10, width = 9)
 cat("Donor subset analysis complete. Plot saved as:", donor_plot_file, "\n")
@@ -339,4 +355,5 @@ cat("Donor subset analysis complete. Plot saved as:", donor_plot_file, "\n")
 
 
 # Print a message confirming all analyses are complete
-cat("\nAll analyses complete. Output files are in the 'donor_subset_analysis' directory.\n")
+cat("\nAll analyses complete. Output files are in the  directory.\n")
+

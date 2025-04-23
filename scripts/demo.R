@@ -1,211 +1,343 @@
-#!/usr/bin/env Rscript
-#############################################################################
-# targseq_demo.R - Demonstration of the targseq package
-# 
-# This script demonstrates how to use the targseq package for maize phylogenetic
-# analysis with variant visualization.
-#
-# Author: Maize Genetics Lab
-# Date: April 2025
-#############################################################################
+#' Maize Phylogeny Analysis with Variant and Environmental Data
+#' 
+#' This script demonstrates how to analyze maize genetic data by:
+#' 1. Reading sequence alignment and metadata
+#' 2. Extracting variant information
+#' 3. Building a phylogenetic tree
+#' 4. Visualizing the tree with variant states, ancestry, and environmental data
+#' 5. Creating a subset analysis focusing on donor ancestry taxa
+#' 
+#' Authors: Maize Genetics Lab
+#' Version: 1.1
 
-#===========================================================================
-# 1. SETUP AND INSTALLATION
-#===========================================================================
+# Load required libraries
+library(targseq)      # Custom package for targeted sequencing analysis
+library(Biostrings)   # For handling biological sequences
+library(phangorn)     # For phylogenetic analysis
+library(ape)          # For phylogenetic tree operations
+library(ggtree)       # For tree visualization
+library(ggplot2)      # For plotting
+library(colorspace)   # For color manipulation
+library(dplyr)        # For data manipulation
+library(ggnewscale)   # For multiple scales in ggplot
+library(GenomicRanges) # For handling genomic coordinates
 
-#---------------------------------------------------------------------------
-# 1.1 Install required packages (if needed)
-#---------------------------------------------------------------------------
-# Install devtools if not already installed
-if (!requireNamespace("devtools", quietly = TRUE)) {
-  install.packages("devtools")
-}
+#===============================================================================
+# 1. Read sequence alignment and metadata
+#===============================================================================
 
-# Install targseq package from GitHub
-# Only run this if you need to install or update the package
-# Comment out after successful installation
-# devtools::install_github("sawers-rellan-labs/targseq")
-
-#---------------------------------------------------------------------------
-# 1.2 Load required libraries
-#---------------------------------------------------------------------------
-# Main targseq package
-library(targseq)
-
-# Bioinformatics packages
-library(Biostrings)  # For sequence handling
-library(phangorn)    # For phylogenetic analysis
-library(ape)         # For tree manipulation
-
-# Visualization packages
-library(ggtree)      # For tree visualization
-library(ggplot2)     # For plotting
-library(dplyr)       # For data manipulation
-
-# Set output directory
-project_dir <- "."
-# Uncomment below to specify a different output directory
-# project_dir <- "~/path/to/output"
-
-# Check if directory exists and create if needed
+# Create a directory for outputs if it doesn't exist
+project_dir <- "tree_plotting"
 if (!dir.exists(project_dir)) {
-  dir.create(project_dir, recursive = TRUE)
+  dir.create(project_dir)
 }
 
-#===========================================================================
-# 2. DATA IMPORT & PREPROCESSING
-#===========================================================================
-
-#---------------------------------------------------------------------------
-# 2.1 Load sequence alignment
-#---------------------------------------------------------------------------
-# Get example data path from package
+# Load sequence alignment from the targseq package
 aln_file <- system.file("extdata", "hpc1_aligned.fasta", package="targseq")
-
-# Read the alignment
-cat("Reading sequence alignment...\n")
 alignment <- readDNAStringSet(aln_file)
 
-# Display basic stats
-cat(sprintf("Loaded %d sequences, each %d bp long\n", 
-            length(alignment), width(alignment)[1]))
+# Create a dataframe with sequence IDs in their original order
+alignment_order <- data.frame(seqid=names(alignment)) 
 
-#---------------------------------------------------------------------------
-# 2.2 Load metadata
-#---------------------------------------------------------------------------
-# Get metadata file path from package
+# Load metadata files from the targseq package
 metadata_file <- system.file("extdata", "seqid_label.csv", package="targseq")
+donor_file <- system.file("extdata", "donor_data.csv", package="targseq")
+donor_data <- read.csv(donor_file)
 
-# Read metadata 
+# Read and join the metadata information
 cat("Reading sample metadata...\n")
 taxa_info <- read.csv(metadata_file)
 
-# Set rownames for easy indexing
-rownames(taxa_info) <- taxa_info$seqid
+# Join all metadata while preserving the original alignment order
+taxa_info <- alignment_order %>%
+  left_join(taxa_info) %>%           
+  left_join(donor_data, by=c(donor_accession= "donor_id")) %>%
+  select(seqid, label=label_3, ancestry_call, elevation)
 
-# Rename ancestry column for consistency
-taxa_info <- taxa_info 
-#===========================================================================
-# 3. VARIANT DETECTION
-#===========================================================================
+# Rename sequences with meaningful labels
+names(alignment) <- taxa_info$label
 
-#---------------------------------------------------------------------------
-# 3.1 Define variants of interest
-#---------------------------------------------------------------------------
-cat("Detecting variants...\n")
-# Define variants with their flanking sequence patterns
+#===============================================================================
+# 2. Extract variant genotypes
+#===============================================================================
+
+# Define variants to extract: A204T and I211V
+# Each variant is identified by a unique DNA pattern
 variants <- data.frame(
   name = c("A204T", "I211V"),
   pattern = c("GCCGTGGCGTGGCGC", "ATCACCCGC")
 )
 
-#---------------------------------------------------------------------------
-# 3.2 Extract variant information
-#---------------------------------------------------------------------------
-# The get_variant_gt function finds these patterns in the sequences
-# and extracts the variant nucleotide at the specified position
+# Extract variant genotypes from the alignment
+# (get_variant_gt is a function from the targseq package)
 variant_data <- get_variant_gt(variants, alignment)
 
-# Convert to standardized REF/ALT format for visualization
+#===============================================================================
+# 3. Recode variants as REF/ALT
+#===============================================================================
+
+# Recode A204T: A=REF, G=ALT
 variant_data$A204T <- c("ALT", "REF")[as.factor(variant_data$A204T)]
+
+# Recode I211V: G=REF, A=ALT
 variant_data$I211V <- c("REF", "ALT")[as.factor(variant_data$I211V)]
 
-# Ensure row names match the sequence names
-rownames(variant_data) <- names(alignment)
+# Set row names for easier integration with the tree
+rownames(variant_data) <- taxa_info$label
 
-#===========================================================================
-# 4. PHYLOGENETIC TREE CREATION
-#===========================================================================
+#===============================================================================
+# 4. Build phylogenetic tree
+#===============================================================================
 
-#---------------------------------------------------------------------------
-# 4.1 Build phylogenetic tree
-#---------------------------------------------------------------------------
-cat("Building phylogenetic tree...\n")
-# Convert to phyDat format for phylogenetic analysis
-phyDat <- phyDat(data = read.dna(aln_file, format="fasta"), 
-                 type = "DNA", levels = NULL)
+# Convert FASTA to phyDat format for phylogenetic analysis
+phyDat <- phyDat(read.dna(aln_file, format="fasta"), type="DNA")
+names(phyDat) <- taxa_info$label
 
-# Calculate distance matrix using JC69 model
-# Note: For more rigorous analysis, use modelTest() to find the best model
-# mt <- modelTest(phyDat)
+# Calculate genetic distances using the JC69 model
 dna_dist <- dist.ml(phyDat, model="JC69")
 
-# Build UPGMA tree and arrange branches for better visualization
-tree <- ladderize(upgma(dna_dist), right = FALSE)
+# Build a UPGMA tree and ladderize it
+tree <- ladderize(upgma(dna_dist), right=FALSE)
 
-#---------------------------------------------------------------------------
-# 4.2 Rotate tree to place B73 reference at top
-#---------------------------------------------------------------------------
-# The pivot_on function rotates the tree to place a specified taxon at the top
-# In this case, we want B73 (reference genome) at the top
-rotated_tree <- pivot_on(tree, "hpc1_B73")
+# Rotate the tree to put B73 at the top
+# pivot_on is a custom function that rotates the tree to place a specific taxon at the top
+rotated_tree <- pivot_on(tree, "Zm_B73")
 
-#===========================================================================
-# 5. VISUALIZATION
-#===========================================================================
+#===============================================================================
+# 5. Create tree visualization with ggtree
+#===============================================================================
 
-#---------------------------------------------------------------------------
-# 5.1 Create basic tree visualization with variants
-#---------------------------------------------------------------------------
-cat("Creating visualizations...\n")
-# Prepare taxa info for the specific tree
-tree_taxa_info <- taxa_info[rotated_tree$tip.label, ]
-
-# Create variant heatmap tree
-tree_plot <- create_variant_heatmap_tree(
-  tree = rotated_tree, 
-  data = variant_data
-)
+# Add ancestry information to the tree
+ancestry <- taxa_info[, c("label", "ancestry_call"), drop=FALSE]
+rownames(ancestry) <- taxa_info$label
 
 # Define color palette for ancestry
 ancestry_palette <- c("Recurrent" = "tomato", "Donor" = "royalblue")
 
-#---------------------------------------------------------------------------
-# 5.2 Add ancestry information to tree
-#---------------------------------------------------------------------------
-# Enhance tree with ancestry information using ggtree's %<+% operator
-enhanced_tree_plot <- tree_plot %<+% tree_taxa_info +
+# Create the base tree with ancestry information
+p1 <- ggtree(rotated_tree, ladderize = FALSE) %<+% ancestry +
   # Add colored points indicating ancestry
-  geom_tippoint(aes(color = ancestry_call), 
-                position = position_nudge(x = 0.0015)) +
-  # Set color scheme for ancestry points
-  scale_color_manual(values = ancestry_palette) +
+  geom_tippoint(aes(color = ancestry_call), position = position_nudge(x = 0.0015)) +
+  # Add tip labels
+  geom_tiplab(size = 2.5, offset = 0.002, align = TRUE, linesize = 0.1) +
+  # Add vertical expansion for better spacing
+  ggtree::vexpand(.1, 1) +
+  # Use the custom ancestry color palette
+  scale_color_manual(name="Ancestry call", values = ancestry_palette) +
   # Position the legend
+  theme(legend.position = c(0.25, 0.5)) +
+  # Use tree theme for clean visualization
+  theme_tree2()
+
+#===============================================================================
+# 6. Add environmental data as a heatmap
+#===============================================================================
+
+# Prepare environmental parameters data
+env_par <- taxa_info[, c("elevation"), drop=FALSE]
+colnames(env_par) <- c("Elevation")
+rownames(env_par) <- taxa_info$label
+
+# Add elevation data as a heatmap next to the tree
+p2 <- gheatmap(p1, 
+               data = env_par[, "Elevation", drop=FALSE], 
+               offset = 0.025, width = 0.15, 
+               colnames = TRUE, colnames_angle = 45, 
+               colnames_offset_y = 0.4, hjust = 0,
+               colnames_position = "top") +
+  # Use diverging color palette centered at 1500m
+  scale_fill_continuous_divergingx(name = "Elevation (masl)", 
+                                   palette = 'RdBu', 
+                                   mid = 1500, 
+                                   n_interp = 25) +
   theme(legend.position = c(0.25, 0.5))
 
-# Save the enhanced tree plot
-output_file <- file.path(project_dir, "hpc1_tree_plot.pdf")
-ggsave(enhanced_tree_plot, file = output_file,
-       height = 12, width = 7, units = "in")
-cat(sprintf("Saved tree plot to: %s\n", output_file))
+#===============================================================================
+# 7. Add variant data as another heatmap
+#===============================================================================
 
-#---------------------------------------------------------------------------
-# 5.3 Create alternative visualization (tree with tip labels)
-#---------------------------------------------------------------------------
-# Create a simpler tree with just labels and ancestry points
-simple_tree <- ggtree(rotated_tree, ladderize = FALSE) %<+% 
-  tree_taxa_info + 
-  geom_tiplab(size = 3) +
-  geom_tippoint(aes(color = ancestry_call), 
-                position = position_nudge(x = 0.0015)) +
-  scale_color_manual(values = ancestry_palette)
+# Define color palette for REF/ALT states
+ref_alt_colors <- c("REF" = "tomato", "ALT" = "royalblue")
 
-#---------------------------------------------------------------------------
-# 5.4 Add multiple sequence alignment to tree visualization
-#---------------------------------------------------------------------------
-# Create combined visualization with tree + alignment
-alignment_tree <- msaplot(enhanced_tree_plot, 
-                          fasta = aln_file, 
-                          offset = 0.05,   # Space between tree and alignment
-                          width = 0.6) +   # Width of alignment panel
+# Add variant data as another heatmap
+# Use new_scale_fill() to create a separate color scale from the elevation data
+p3 <- gheatmap(p2 + new_scale_fill(), 
+               variant_data, 
+               offset = 0.045, width = 0.12, 
+               colnames = TRUE, colnames_angle = 45, 
+               colnames_offset_y = 0.65, hjust = 0,
+               colnames_position = "top") +
+  scale_fill_manual(values = ref_alt_colors, name = "Allele") +
   theme(legend.position = c(0.25, 0.5))
 
-# Save the tree with alignment visualization
-output_file <- file.path(project_dir, "hpc1_tree_alignment.png")
-ggsave(alignment_tree, 
-       file = output_file,
-       height = 12, width = 7, units = "in")
-cat(sprintf("Saved tree with alignment to: %s\n", output_file))
+#===============================================================================
+# 8. Add sequence alignment view
+#===============================================================================
 
-cat("Demo completed successfully!\n")
+# Trim the alignment to focus on the region of interest
+n_taxa <- length(alignment) 
+n_pos <- width(alignment)[1]
 
+# Create genomic ranges for trimming (starting from position 2226)
+trimmedRanges <- GRanges(
+  seqnames = names(alignment),
+  ranges = IRanges(
+    start = rep(2226, n_taxa),
+    end = rep(n_pos, n_taxa)
+  )
+)
+
+# Perform the trimming operation
+trimmed_alignment <- alignment[trimmedRanges]
+
+# Order the alignment to match the tree
+trimmed_alignment <- trimmed_alignment[rotated_tree$tip.label]
+
+# Convert to DNAbin format for msaplot
+bin_alignment <- as.DNAbin(trimmed_alignment)
+
+# Verify alignment order matches the tree
+all(names(bin_alignment) == rotated_tree$tip.label)
+
+# Add alignment view alongside the tree and heatmaps
+# Use new_scale_fill() again to create a separate color scale
+alignment_tree <- msaplot(p3 + new_scale_fill(), 
+                          fasta = bin_alignment, 
+                          offset = 0.06, 
+                          width = 0.5) +
+  guides(fill = "none") +
+  theme(legend.position = c(0.25, 0.5))
+
+#===============================================================================
+# 9. Save the final plot
+#===============================================================================
+
+# Save the visualization as a PNG file
+png_file <- file.path(project_dir,"target_sequencing_tree_alignment.png")
+ggsave(alignment_tree, file = png_file, height = 12, width = 8)
+
+# Print a message confirming the analysis is complete
+cat("Full analysis complete. Plot saved as 'maize_tree_alignment.png'\n")
+
+#===============================================================================
+# 10. Create and analyze subset of taxa with donor ancestry plus B73
+#===============================================================================
+
+
+
+# First, identify B73 in our dataset
+# Look for "B73" in the label column
+b73_label <- grep("B73", taxa_info$label, value = TRUE)[1]
+cat("B73 reference identified as:", b73_label, "\n")
+
+# Create a subset of taxa with donor ancestry plus B73
+donor_subset <- taxa_info %>%
+  filter(ancestry_call == "Donor" | label == b73_label)
+
+# Check how many taxa we have in our subset
+cat("Number of taxa in donor subset:", nrow(donor_subset), "\n")
+
+# Extract the subset of sequences from our alignment
+donor_alignment <- trimmed_alignment[donor_subset$label]
+
+# Write the subset alignment to a file
+donor_alignment_file <- file.path(project_dir, "hpc1_donor_subset.fasta")
+writeXStringSet(donor_alignment, donor_alignment_file, format="fasta")
+cat("Donor subset alignment written to:", donor_alignment_file, "\n")
+
+# Build a new tree for the donor subset
+donor_aln <- read.dna(donor_alignment_file, format="fasta")
+donor_phyDat <- phyDat(donor_aln, type = "DNA", levels = NULL)
+donor_dist <- dist.ml(donor_phyDat, model="JC69")
+donor_UPGMA <- ladderize(upgma(donor_dist), right = FALSE)
+
+# Rotate the donor tree to put B73 at the top
+donor_tree <- pivot_on(donor_UPGMA, b73_label)
+
+# Save the donor subset tree
+donor_tree_file <- file.path(project_dir, "hpc1_donor_subset.tre")
+write.tree(donor_tree, file = donor_tree_file)
+cat("Donor subset tree saved to:", donor_tree_file, "\n")
+
+#===============================================================================
+# 11. Create visualizations for the donor subset
+#===============================================================================
+
+# Extract variant data for the donor subset
+donor_variant_data <- variant_data[donor_subset$label, ]
+
+# Extract environmental data for the donor subset
+donor_env_data <- env_par[donor_subset$label, , drop=FALSE]
+
+# Create ancestry information for the donor subset
+donor_ancestry <- data.frame(
+  label = donor_subset$label,
+  ancestry_call = donor_subset$ancestry_call
+)
+rownames(donor_ancestry) <- donor_subset$label
+
+# Create the base tree with ancestry information
+donor_p1 <- ggtree(donor_tree, ladderize = FALSE) %<+% donor_ancestry +
+  # Add colored points indicating ancestry
+  geom_tippoint(aes(color = ancestry_call), position = position_nudge(x = 0.001)) +
+  # Add tip labels
+  geom_tiplab(size = 3, offset = 0.002, align = TRUE, linesize = 0.1) +
+  # Add vertical expansion for better spacing
+  ggtree::vexpand(.1, 1) +
+  # Use the custom ancestry color palette
+  scale_color_manual(name="Ancestry", values = ancestry_palette) +
+  # Highlight B73 reference
+  geom_hilight(node = which(donor_tree$tip.label == b73_label), 
+               fill = "gold", alpha = 0.3) +
+  # Position the legend
+  theme(legend.position = c(0.25, 0.5)) +
+  # Use tree theme for clean visualization
+  theme_tree2() +
+  # Add title
+  ggtitle("Donor Ancestry Taxa with B73 Reference")
+
+# Add environmental data as a heatmap
+donor_p2 <- gheatmap(donor_p1, 
+                     data = donor_env_data[, "Elevation", drop=FALSE], 
+                     offset = 0.025, width = 0.15, 
+                     colnames = TRUE, colnames_angle = 45, 
+                     colnames_offset_y = 0.4, hjust = 0,
+                     colnames_position = "top") +
+  # Use diverging color palette centered at 1500m
+  scale_fill_continuous_divergingx(name = "Elevation (masl)", 
+                                   palette = 'RdBu', 
+                                   mid = 1500, 
+                                   n_interp = 25) +
+  theme(legend.position = c(0.25, 0.5))
+
+# Add variant data as another heatmap
+donor_p3 <- gheatmap(donor_p2 + new_scale_fill(), 
+                     donor_variant_data, 
+                     offset = 0.045, width = 0.12, 
+                     colnames = TRUE, colnames_angle = 45, 
+                     colnames_offset_y = 0.65, hjust = 0,
+                     colnames_position = "top") +
+  scale_fill_manual(values = ref_alt_colors, name = "Allele") +
+  theme(legend.position = c(0.25, 0.5))
+
+# Create subset of donor alignment for msaplot
+donor_bin_alignment <- as.DNAbin(donor_alignment)
+
+# Add alignment view alongside the tree and heatmaps
+donor_alignment_tree <- msaplot(donor_p3 + new_scale_fill(), 
+                                fasta = donor_bin_alignment, 
+                                offset = 0.06, 
+                                width = 0.5) +
+  guides(fill = "none") +
+  theme(legend.position = c(0.25, 0.5))
+
+# Save the donor subset visualization
+donor_plot_file <- file.path(project_dir, "donor_subset_tree_alignment.png")
+ggsave(donor_alignment_tree, file = donor_plot_file, height = 10, width = 9)
+cat("Donor subset analysis complete. Plot saved as:", donor_plot_file, "\n")
+
+
+
+
+# Print a message confirming all analyses are complete
+cat("\nAll analyses complete. Output files are in the 'donor_subset_analysis' directory.\n")

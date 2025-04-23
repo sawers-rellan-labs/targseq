@@ -60,7 +60,9 @@ library(targseq)
 
 Before we begin, let’s understand the input files we’ll be working with:
 
-    ## tree_plotting/
+    ## extdata/
+
+    ## ├── ancestry_mismatch.csv            # Input: Ancestry call mismatches with tree position per sample (if any)
 
     ## ├── donor_data.csv                   # Input: Environmental data from donors
 
@@ -82,11 +84,9 @@ Before we begin, let’s understand the input files we’ll be working with:
 
     ##                                      # Contains columns: seqid, label_1, label_2, label_3
 
-    ##                                      # Includes ancestry information (founder_ancestry)
+    ##                                      # Includes ancestry information (ancestry_call)
 
     ##                                      # Classifies samples as 'Donor' or 'Recurrent'
-
-    ##                                      # Contains variant information (A204T, I211V)
 
 Now, let’s set up our directory structure and read our input files:
 

@@ -49,7 +49,8 @@ Before we begin, let's understand the input files we'll be working with:
 
 ```{r file_structure_input, echo=FALSE, eval=TRUE}
 # This chunk will be evaluated when knitting
-cat("tree_plotting/\n")
+cat("extdata/\n")
+cat("├── ancestry_mismatch.csv            # Input: Ancestry call mismatches with tree position per sample (if any)\n")
 cat("├── donor_data.csv                   # Input: Environmental data from donors\n")
 cat("├── hpc1_aligned.fasta               # Input: Multiple sequence alignment of the hpc1 gene\n")
 cat("│                                    # Contains DNA sequences from multiple maize accessions\n")
@@ -60,9 +61,8 @@ cat("│\n")
 cat("└── seqid_label.csv                 # Input: Metadata mapping file\n")
 cat("                                     # Links technical sequence IDs to meaningful labels\n")
 cat("                                     # Contains columns: seqid, label_1, label_2, label_3\n")
-cat("                                     # Includes ancestry information (founder_ancestry)\n")
+cat("                                     # Includes ancestry information (ancestry_call)\n")
 cat("                                     # Classifies samples as 'Donor' or 'Recurrent'\n")
-cat("                                     # Contains variant information (A204T, I211V)\n")
 ```
 
 Now, let's set up our directory structure and read our input files:
@@ -527,8 +527,6 @@ Let's examine the complete file structure with all our inputs and outputs:
 ```{r file_structure, echo=FALSE, eval=TRUE}
 # This chunk will be evaluated when knitting
 cat("tree_plotting/\n")
-cat("├── hpc1_aligned.fasta              # Input: Original alignment file\n")
-cat("├── seqid_label.csv                 # Input: Metadata mapping file\n")
 cat("├── hpc1_nice_labels.fasta          # Output: Alignment with renamed sequences\n")
 cat("├── hpc1_donor_subset.fasta         # Output: Subset alignment with donor taxa + B73\n")
 cat("├── hpc1_UPGMA.tre                  # Output: Full phylogenetic tree in Newick format\n")

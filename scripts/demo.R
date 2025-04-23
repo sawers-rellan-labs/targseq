@@ -239,7 +239,7 @@ ancestry_mismatch_file <-  system.file("extdata", "ancestry_mismatch.csv", packa
 
 ancestry_miscall <- read.csv(ancestry_mismatch_file) %>% 
   filter(locus=="hpc1") %>%
-  inner_join(seqid_label, by =c(locus="gene","fastq_prefix"))
+  inner_join(seqid_label, by =c(locus="gene","fastq_sample"))
 
 ancestry_miscall
 

@@ -111,7 +111,7 @@ seqid_label <- seqid_label %>%
   ) %>%
   # Select and reorder columns for intermediate output
   select(
-    gene, fastq_prefix,seqid, seqid_sample, sample_n, maizegdb_prefix, taxa, 
+    gene, fastq_prefix, fastq_sample, seqid, seqid_sample, sample_n, maizegdb_prefix, taxa, 
     donor_accession, taxa, donor_suffix, ancestry_call, ancestry_prefix, label_1
   )
 
@@ -123,9 +123,9 @@ head(seqid_label)
 #-------------------------------------------------------------------------------
 
 # Define reference data string for B73 and TIL18 samples
-ref_string <- "gene fastq_prefix sample_n seqid  ancestry_call  ancestry_prefix donor_accession label_1 label_2 label_3
-              hpc1 NA NA hpc1_B73  Recurrent  R NA  hpc1_B73 R_Zm_B73 Zm_B73
-              hpc1 NA NA  hpc1_TIL18  Donor  D NA hpc1_TIL18 D_Zx_TIL18 Zx_TIL18"
+ref_string <- "gene fastq_prefix fastq_sample sample_n seqid  ancestry_call  ancestry_prefix donor_accession label_1 label_2 label_3
+              hpc1 NA NA  NA hpc1_B73  Recurrent  R NA  hpc1_B73 R_Zm_B73 Zm_B73
+              hpc1 NA NA  NA hpc1_TIL18  Donor  D NA hpc1_TIL18 D_Zx_TIL18 Zx_TIL18"
 
 # Create reference dataset for all target genes
 ref_label <- lapply(target_genes, FUN = function(x){
@@ -157,7 +157,7 @@ seqid_label <- rbind(
       label_3 = paste(maizegdb_prefix, taxa, donor_suffix, seqid_sample, sep = "_")
     ) %>% 
     # Select final columns and sort
-    select(gene, fastq_prefix, sample_n, seqid, ancestry_call, ancestry_prefix, donor_accession, starts_with("label")) %>%
+    select(gene, fastq_prefix,fastq_sample, sample_n, seqid, ancestry_call, ancestry_prefix, donor_accession, starts_with("label")) %>%
     group_by(gene) %>%
     arrange(gene, sample_n),
   

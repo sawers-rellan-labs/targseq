@@ -424,7 +424,7 @@ ancestry_mismatch_file <-  system.file("extdata", "ancestry_mismatch.csv", packa
                       
 ancestry_miscall <- read.csv(ancestry_mismatch_file) %>% 
   filter(locus=="hpc1") %>% 
-  dplyr::select(fastq_prefix ) %>%
+  dplyr::select(fastq_sample ) %>%
   inner_join(seqid_label)
 
 # Create a subset of taxa with donor ancestry plus B73

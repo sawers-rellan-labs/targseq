@@ -62,7 +62,9 @@ Before we begin, let’s understand the input files we’ll be working with:
 
     ## tree_plotting/
 
-    ## ├── hpc1_aligned.fasta              # Input: Multiple sequence alignment of the hpc1 gene
+    ## ├── donor_data.csv                   # Input: Environmental data from donors
+
+    ## ├── hpc1_aligned.fasta               # Input: Multiple sequence alignment of the hpc1 gene
 
     ## │                                    # Contains DNA sequences from multiple maize accessions
 
@@ -140,8 +142,7 @@ name_map <- data.frame(seqid = trimmed_ids) %>%
 
 # Filter to include only sequences that exist in our alignment
 name_map <- name_map %>%
-  dplyr::filter(seqid %in% names(original_alignment)) %>%
-  rename(ancestry_call = "founder_ancestry")
+  dplyr::filter(seqid %in% names(original_alignment))
 rownames(name_map) <- name_map$label_3
 
 # Report on mapping success
@@ -263,6 +264,7 @@ environmental data as a heatmap.
 library(ggtree)     # For tree visualization
 library(ggplot2)    # For plotting
 library(ggnewscale) # For multiple color scales in the same plot
+library(colorspace)
 library(GenomicRanges) # For handling genomic coordinates
 ```
 
@@ -301,11 +303,26 @@ plot(p1)
 Now let’s add environmental data as a heatmap alongside the tree:
 
 ``` r
+# Create a dataframe with sequence IDs in their original order
+alignment_order <- data.frame(seqid=names(trimmed_alignment))
+
+name_map$seqid <- name_map$label_3
+# Load  environmental data
+
 # Prepare environmental parameters data
 # Here we're using elevation data from our metadata
-env_par <- name_map[, c("elevation"), drop=FALSE]
+donor_file <- file.path(project_dir, "donor_data.csv")
+donor_data <- read.csv(donor_file ) 
+
+# Join all metadata while preserving the original alignment order
+taxa_info  <- alignment_order %>%
+  left_join(name_map) %>%           
+  left_join(donor_data, by=c(donor_accession= "donor_id")) %>%
+  select(seqid,donor_accession, label=label_3, ancestry_call, elevation)
+
+env_par <- taxa_info [, c("elevation"), drop=FALSE]
 colnames(env_par) <- c("Elevation")
-rownames(env_par) <- name_map$label_3
+rownames(env_par) <- taxa_info$seqid
 
 # Add elevation data as a heatmap next to the tree
 p2 <- gheatmap(p1, 

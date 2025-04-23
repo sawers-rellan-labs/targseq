@@ -50,7 +50,8 @@ Before we begin, let's understand the input files we'll be working with:
 ```{r file_structure_input, echo=FALSE, eval=TRUE}
 # This chunk will be evaluated when knitting
 cat("tree_plotting/\n")
-cat("├── hpc1_aligned.fasta              # Input: Multiple sequence alignment of the hpc1 gene\n")
+cat("├── donor_data.csv                   # Input: Environmental data from donors\n")
+cat("├── hpc1_aligned.fasta               # Input: Multiple sequence alignment of the hpc1 gene\n")
 cat("│                                    # Contains DNA sequences from multiple maize accessions\n")
 cat("│                                    # Technical IDs as sequence headers\n")
 cat("│                                    # ~3000 bp per sequence\n")
@@ -118,8 +119,7 @@ name_map <- data.frame(seqid = trimmed_ids) %>%
 
 # Filter to include only sequences that exist in our alignment
 name_map <- name_map %>%
-  dplyr::filter(seqid %in% names(original_alignment)) %>%
-  rename(ancestry_call = "founder_ancestry")
+  dplyr::filter(seqid %in% names(original_alignment))
 rownames(name_map) <- name_map$label_3
 
 # Report on mapping success
@@ -237,6 +237,7 @@ Now we'll create a comprehensive visualization of our phylogenetic tree with var
 library(ggtree)     # For tree visualization
 library(ggplot2)    # For plotting
 library(ggnewscale) # For multiple color scales in the same plot
+library(colorspace)
 library(GenomicRanges) # For handling genomic coordinates
 ```
 
@@ -275,11 +276,27 @@ plot(p1)
 Now let's add environmental data as a heatmap alongside the tree:
 
 ```{r env_heatmap}
+
+# Create a dataframe with sequence IDs in their original order
+alignment_order <- data.frame(seqid=names(trimmed_alignment))
+
+name_map$seqid <- name_map$label_3
+# Load  environmental data
+
 # Prepare environmental parameters data
 # Here we're using elevation data from our metadata
-env_par <- name_map[, c("elevation"), drop=FALSE]
+donor_file <- file.path(project_dir, "donor_data.csv")
+donor_data <- read.csv(donor_file ) 
+
+# Join all metadata while preserving the original alignment order
+taxa_info  <- alignment_order %>%
+  left_join(name_map) %>%           
+  left_join(donor_data, by=c(donor_accession= "donor_id")) %>%
+  select(seqid,donor_accession, label=label_3, ancestry_call, elevation)
+
+env_par <- taxa_info [, c("elevation"), drop=FALSE]
 colnames(env_par) <- c("Elevation")
-rownames(env_par) <- name_map$label_3
+rownames(env_par) <- taxa_info$seqid
 
 # Add elevation data as a heatmap next to the tree
 p2 <- gheatmap(p1, 

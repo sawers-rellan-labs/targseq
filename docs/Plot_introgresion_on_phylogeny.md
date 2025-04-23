@@ -1,7 +1,7 @@
 Maize Phylogeny Analysis with Multiple Variants
 ================
 Maize Genetics Lab
-2025-04-18
+2025-04-22
 
 - [1. Setting up the Environment](#1-setting-up-the-environment)
 - [2. Reading Input Files](#2-reading-input-files)
@@ -12,15 +12,15 @@ Maize Genetics Lab
 - [6. Building a Phylogenetic Tree](#6-building-a-phylogenetic-tree)
 - [7. Visualizing the Full Tree with
   ggtree](#7-visualizing-the-full-tree-with-ggtree)
-- [8. Subsetting and Visualizing Donor Taxa with
-  ggtree](#8-subsetting-and-visualizing-donor-taxa-with-ggtree)
-- [10. Project File Structure](#10-project-file-structure)
-- [11. Advantages of ggtree Over Base R
-  Plotting](#11-advantages-of-ggtree-over-base-r-plotting)
-- [12. Understanding the Key
-  Functions](#12-understanding-the-key-functions)
-- [13. Conclusion](#13-conclusion)
-- [14. Troubleshooting Tips](#14-troubleshooting-tips)
+- [8. Creating a Donor Subset
+  Analysis](#8-creating-a-donor-subset-analysis)
+- [9. Project File Structure](#9-project-file-structure)
+- [10. Advantages of ggtree Over Base R
+  Plotting](#10-advantages-of-ggtree-over-base-r-plotting)
+- [11. Understanding the Key
+  Functions](#11-understanding-the-key-functions)
+- [12. Conclusion](#12-conclusion)
+- [13. Troubleshooting Tips](#13-troubleshooting-tips)
 
 This tutorial walks through a complete workflow for processing maize
 genetic data, focusing on:
@@ -254,105 +254,157 @@ plot(hpc1_UPGMA, cex = 0.7, main = "UPGMA Tree Before Rotation")
 
 ## 7. Visualizing the Full Tree with ggtree
 
-Now we’ll create comprehensive tree visualizations with variant
-information using ggtree. This approach provides more flexibility and
-better integration of multiple data types compared to base R plotting:
+Now we’ll create a comprehensive visualization of our phylogenetic tree
+with variant and ancestry information using ggtree, plus add
+environmental data as a heatmap.
 
 ``` r
-# Install required packages if not already installed
-if (!requireNamespace("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-
-if (!requireNamespace("ggtree", quietly = TRUE))
-  BiocManager::install("ggtree")
-
-if (!requireNamespace("ggplot2", quietly = TRUE))
-  install.packages("ggplot2")
-
-if (!requireNamespace("ggnewscale", quietly = TRUE))
-  install.packages("ggnewscale")
-
-# Load packages
+# Load required packages for visualization
 library(ggtree)     # For tree visualization
 library(ggplot2)    # For plotting
 library(ggnewscale) # For multiple color scales in the same plot
-library(dplyr)      # For data manipulation
+library(GenomicRanges) # For handling genomic coordinates
 ```
 
-Now let’s apply our rotation function and create plots using ggtree:
+Let’s build our visualization step by step:
 
 ``` r
-# Rotate the tree to put B73 reference at the top using our custom function
-# pivot_on is a function from the targseq package that rotates the tree 
-# so a specific taxon appears at the top
-out_tree <- pivot_on(hpc1_UPGMA, hpc1_UPGMA$tip.label[1]) 
+# Rotate the tree to put B73 at the top using the pivot_on function
+rotated_tree <- pivot_on(hpc1_UPGMA, "Zm_B73")
 
-# Save the full phylogenetic tree for future use
-tree_file <- file.path(project_dir, "hpc1_UPGMA.tre")
-write.tree(out_tree, file = tree_file)
-cat("Full phylogenetic tree saved to:", tree_file, "\n")
+# Prepare ancestry information for the tree
+ancestry <- name_map[, c("label_3", "ancestry_call"), drop=FALSE]
+rownames(ancestry) <- name_map$label_3
 
-# Extract ancestry information for visualization
-taxa_info <- name_map[out_tree$tip.label, ] %>%
-  dplyr::select(label=label_3, ancestry_call)
+# Define color palette for ancestry
+ancestry_palette <- c("Recurrent" = "tomato", "Donor" = "royalblue")
 
-# Create tree visualization with variant heatmap
-# create_variant_heatmap_tree is our custom function from plotting_functions.R
-# It creates a publication-quality tree with a variant heatmap
-tree_plot <- create_variant_heatmap_tree(
-  tree = out_tree, 
-  data = variant_data
-)
-
-# Define color palette for ancestry information
-pal <- c("Recurrent" = "tomato", "Donor" = "royalblue")
-
-# Add ancestry information to the tree plot
-# The %<+% operator from ggtree adds external data to the tree
-tree_plot <- tree_plot %<+% taxa_info +
+# Create the base tree with ancestry information
+p1 <- ggtree(rotated_tree, ladderize = FALSE) %<+% ancestry +
   # Add colored points indicating ancestry
-  geom_tippoint(aes(color = ancestry_call), 
-                position = position_nudge(x = 0.0015)) +
-  # Set color scheme for ancestry points
-  scale_color_manual(values = pal) +
+  geom_tippoint(aes(color = ancestry_call), position = position_nudge(x = 0.0015)) +
+  # Add tip labels
+  geom_tiplab(size = 2.5, offset = 0.002, align = TRUE, linesize = 0.1) +
+  # Add vertical expansion for better spacing
+  ggtree::vexpand(.1, 1) +
+  # Use the custom ancestry color palette
+  scale_color_manual(name="Ancestry call", values = ancestry_palette) +
   # Position the legend
-  theme(legend.position = c(0.25, 0.5))
+  theme(legend.position = c(0.25, 0.5)) +
+  # Use tree theme for clean visualization
+  theme_tree2()
 
-# Save the tree plot
-ggsave(tree_plot, 
-       file = file.path(project_dir, "hpc1_all_samples_tre.pdf"), 
-       height = 12, width = 7, units = "in")
-
-# Create a combined visualization with tree + alignment
-# msaplot adds the multiple sequence alignment alongside the tree
-p2 <- msaplot(tree_plot, 
-              fasta = output_alignment, 
-              offset = 0.05,  # Space between tree and alignment
-              width = 0.6) +  # Width of alignment panel
-  theme(legend.position = c(0.25, 0.5))
-
-# Save the tree with alignment visualization
-ggsave(p2, file = file.path(project_dir, "hpc1_tree_alignment.png"), 
-       height = 12, width = 7, units = "in")
+# Display the basic tree with ancestry information
+plot(p1)
 ```
 
-## 8. Subsetting and Visualizing Donor Taxa with ggtree
+Now let’s add environmental data as a heatmap alongside the tree:
 
-Now we’ll create a subset analysis focusing only on taxa with donor
-ancestry plus the B73 reference:
+``` r
+# Prepare environmental parameters data
+# Here we're using elevation data from our metadata
+env_par <- name_map[, c("elevation"), drop=FALSE]
+colnames(env_par) <- c("Elevation")
+rownames(env_par) <- name_map$label_3
+
+# Add elevation data as a heatmap next to the tree
+p2 <- gheatmap(p1, 
+               data = env_par[, "Elevation", drop=FALSE], 
+               offset = 0.025, width = 0.15, 
+               colnames = TRUE, colnames_angle = 45, 
+               colnames_offset_y = 0.4, hjust = 0,
+               colnames_position = "top") +
+  # Use diverging color palette centered at 1500m
+  scale_fill_continuous_divergingx(name = "Elevation (masl)", 
+                                   palette = 'RdBu', 
+                                   mid = 1500, 
+                                   n_interp = 25) +
+  theme(legend.position = c(0.25, 0.5))
+
+# Display the tree with elevation heatmap
+plot(p2)
+```
+
+Next, let’s add our variant data as another heatmap layer:
+
+``` r
+# Define color palette for REF/ALT states
+ref_alt_colors <- c("REF" = "tomato", "ALT" = "royalblue")
+
+# Add variant data as another heatmap
+# We use new_scale_fill() to create a separate color scale from the elevation data
+p3 <- gheatmap(p2 + new_scale_fill(), 
+               variant_data, 
+               offset = 0.045, width = 0.12, 
+               colnames = TRUE, colnames_angle = 45, 
+               colnames_offset_y = 0.65, hjust = 0,
+               colnames_position = "top") +
+  scale_fill_manual(values = ref_alt_colors, name = "Allele") +
+  theme(legend.position = c(0.25, 0.5))
+
+# Display the tree with both elevation and variant heatmaps
+plot(p3)
+```
+
+Finally, let’s add a sequence alignment view to complete our
+visualization:
+
+``` r
+# Trim the alignment to focus on the region of interest
+n_taxa <- length(trimmed_alignment) 
+n_pos <- width(trimmed_alignment)[1]
+
+# Make sure our alignment is ordered to match the tree
+ordered_alignment <- trimmed_alignment[rotated_tree$tip.label]
+
+# Convert to DNAbin format for msaplot
+bin_alignment <- as.DNAbin(ordered_alignment)
+
+# Verify alignment order matches the tree
+all(names(bin_alignment) == rotated_tree$tip.label)
+
+# Add alignment view alongside the tree and heatmaps
+# Use new_scale_fill() again to create a separate color scale
+alignment_tree <- msaplot(p3 + new_scale_fill(), 
+                          fasta = bin_alignment, 
+                          offset = 0.06, 
+                          width = 0.5) +
+  guides(fill = "none") +
+  theme(legend.position = c(0.25, 0.5))
+
+# Display the complete visualization
+plot(alignment_tree)
+
+# Save the visualization as a PNG file
+png_file <- file.path(project_dir, "target_sequencing_tree_alignment.png")
+ggsave(alignment_tree, file = png_file, height = 12, width = 8)
+cat("Full tree visualization complete. Plot saved as:", png_file, "\n")
+```
+
+## 8. Creating a Donor Subset Analysis
+
+Often we want to focus our analysis on a specific subset of taxa. In
+this case, we’ll create a subset that includes only taxa with donor
+ancestry plus the B73 reference genome.
 
 ``` r
 # First, identify B73 in our dataset
-b73_label <- grep("B73", name_map$label_2, value = TRUE)[1]
+# Look for "B73" in the label column
+b73_label <- grep("B73", name_map$label_3, value = TRUE)[1]
 cat("B73 reference identified as:", b73_label, "\n")
 
 # Create a subset of taxa with donor ancestry plus B73
 donor_subset <- name_map %>%
-  filter(ancestry_call == "Donor" | label_2 == b73_label)
+  filter(ancestry_call == "Donor" | label_3 == b73_label)
 
 # Check how many taxa we have in our subset
 cat("Number of taxa in donor subset:", nrow(donor_subset), "\n")
+```
 
+Now that we have our subset defined, let’s extract the corresponding
+sequences and build a new tree:
+
+``` r
 # Extract the subset of sequences from our alignment
 donor_alignment <- trimmed_alignment[donor_subset$label_3]
 
@@ -367,55 +419,108 @@ donor_phyDat <- phyDat(donor_aln, type = "DNA", levels = NULL)
 donor_dist <- dist.ml(donor_phyDat, model="JC69")
 donor_UPGMA <- ladderize(upgma(donor_dist), right = FALSE)
 
-# Get B73 label for rotation
-b73_label <- names(donor_alignment)[1]
-
 # Rotate the donor tree to put B73 at the top
-donor_tree <- pivot_on(donor_UPGMA, b73_label) 
+donor_tree <- pivot_on(donor_UPGMA, b73_label)
 
 # Save the donor subset tree
 donor_tree_file <- file.path(project_dir, "hpc1_donor_subset.tre")
 write.tree(donor_tree, file = donor_tree_file)
 cat("Donor subset tree saved to:", donor_tree_file, "\n")
-
-# Prepare ancestry information for visualization
-taxa_info <- donor_subset[donor_tree$tip.label, ] %>%
-  dplyr::select(label=label_3, ancestry_call)
-
-# Create visualization for donor subset
-# Reuse the same function from plotting_functions.R
-tree_plot <- create_variant_heatmap_tree(
-  tree = donor_tree, 
-  data = variant_data[donor_tree$tip.label, ]
-)
-
-# Add ancestry information with the same color scheme
-pal <- c("Recurrent" = "tomato", "Donor" = "royalblue")
-tree_plot <- tree_plot %<+% taxa_info +
-  geom_tippoint(aes(color = ancestry_call), 
-                position = position_nudge(x = 0.0015)) +
-  scale_color_manual(values = pal) +
-  theme(legend.position = c(0.25, 0.5))
-
-# Save the donor subset tree visualization
-ggsave(tree_plot, 
-       file = file.path(project_dir, "hpc1_donor_subset_tre.pdf"), 
-       height = 10, width = 7, units = "in")
-
-# Create combined visualization with tree + alignment
-p2 <- msaplot(tree_plot, 
-              fasta = donor_alignment_file, 
-              offset = 0.05, 
-              width = 0.6) +
-  theme(legend.position = c(0.25, 0.5))
-
-# Save the donor subset tree with alignment
-ggsave(p2, 
-       file = file.path(project_dir, "hpc1_donor_subset_tre.png"), 
-       height = 10, width = 7, units = "in")
 ```
 
-## 10. Project File Structure
+Let’s visualize the donor subset tree with the same approach we used for
+the full tree:
+
+``` r
+# Extract variant data for the donor subset
+donor_variant_data <- variant_data[donor_subset$label_3, ]
+
+# Extract environmental data for the donor subset
+donor_env_data <- env_par[donor_subset$label_3, , drop=FALSE]
+
+# Create ancestry information for the donor subset
+donor_ancestry <- data.frame(
+  label_3 = donor_subset$label_3,
+  ancestry_call = donor_subset$ancestry_call
+)
+rownames(donor_ancestry) <- donor_subset$label_3
+
+# Create the base tree with ancestry information
+donor_p1 <- ggtree(donor_tree, ladderize = FALSE) %<+% donor_ancestry +
+  # Add colored points indicating ancestry
+  geom_tippoint(aes(color = ancestry_call), position = position_nudge(x = 0.001)) +
+  # Add tip labels
+  geom_tiplab(size = 3, offset = 0.002, align = TRUE, linesize = 0.1) +
+  # Add vertical expansion for better spacing
+  ggtree::vexpand(.1, 1) +
+  # Use the custom ancestry color palette
+  scale_color_manual(name="Ancestry", values = ancestry_palette) +
+  # Highlight B73 reference
+  geom_hilight(node = which(donor_tree$tip.label == b73_label), 
+               fill = "gold", alpha = 0.3) +
+  # Position the legend
+  theme(legend.position = c(0.25, 0.5)) +
+  # Use tree theme for clean visualization
+  theme_tree2() +
+  # Add title
+  ggtitle("Donor Ancestry Taxa with B73 Reference")
+
+# Add environmental data as a heatmap
+donor_p2 <- gheatmap(donor_p1, 
+                     data = donor_env_data[, "Elevation", drop=FALSE], 
+                     offset = 0.025, width = 0.15, 
+                     colnames = TRUE, colnames_angle = 45, 
+                     colnames_offset_y = 0.4, hjust = 0,
+                     colnames_position = "top") +
+  # Use diverging color palette centered at 1500m
+  scale_fill_continuous_divergingx(name = "Elevation (masl)", 
+                                   palette = 'RdBu', 
+                                   mid = 1500, 
+                                   n_interp = 25) +
+  theme(legend.position = c(0.25, 0.5))
+
+# Add variant data as another heatmap
+donor_p3 <- gheatmap(donor_p2 + new_scale_fill(), 
+                     donor_variant_data, 
+                     offset = 0.045, width = 0.12, 
+                     colnames = TRUE, colnames_angle = 45, 
+                     colnames_offset_y = 0.65, hjust = 0,
+                     colnames_position = "top") +
+  scale_fill_manual(values = ref_alt_colors, name = "Allele") +
+  theme(legend.position = c(0.25, 0.5))
+
+# Create subset of donor alignment for msaplot
+donor_bin_alignment <- as.DNAbin(donor_alignment)
+
+# Add alignment view alongside the tree and heatmaps
+donor_alignment_tree <- msaplot(donor_p3 + new_scale_fill(), 
+                                fasta = donor_bin_alignment, 
+                                offset = 0.06, 
+                                width = 0.5) +
+  guides(fill = "none") +
+  theme(legend.position = c(0.25, 0.5))
+
+# Display the donor subset visualization
+plot(donor_alignment_tree)
+
+# Save the donor subset visualization
+donor_plot_file <- file.path(project_dir, "donor_subset_tree_alignment.png")
+ggsave(donor_alignment_tree, file = donor_plot_file, height = 10, width = 9)
+cat("Donor subset analysis complete. Plot saved as:", donor_plot_file, "\n")
+```
+
+The donor subset analysis allows us to focus specifically on the
+relationships between B73 and the donor accessions, making it easier to
+identify patterns of introgression or shared ancestry. By highlighting
+B73 in gold, we can quickly identify it as our reference genome in the
+visualization.
+
+This subset approach is particularly useful when working with large
+datasets where the full tree might be too crowded to interpret easily.
+It also allows us to examine how specific groups of taxa (in this case,
+donor accessions) relate to a reference genome of interest.
+
+## 9. Project File Structure
 
 Let’s examine the complete file structure with all our inputs and
 outputs:
@@ -434,17 +539,11 @@ outputs:
 
     ## ├── hpc1_donor_subset.tre           # Output: Donor subset tree in Newick format
 
-    ## ├── hpc1_all_samples_tre.pdf        # Output: Full tree visualization with variant heatmap
+    ## ├── target_sequencing_tree_alignment.png # Output: Full tree with visualization
 
-    ## ├── hpc1_tree_alignment.png         # Output: Full tree with sequence alignment visualization
+    ## └── donor_subset_tree_alignment.png      # Output: Donor subset visualization
 
-    ## ├── hpc1_donor_subset_tre.pdf       # Output: Donor subset tree with variant heatmap
-
-    ## ├── hpc1_donor_subset_tre.png       # Output: Donor subset tree with alignment
-
-    ## └── hpc1_circular_tree.pdf          # Output: Circular tree visualization
-
-## 11. Advantages of ggtree Over Base R Plotting
+## 10. Advantages of ggtree Over Base R Plotting
 
 The ggtree package offers several advantages over base R plotting
 functions for phylogenetic trees:
@@ -473,7 +572,7 @@ functions for phylogenetic trees:
 8.  **Heatmap Integration**: The gheatmap function allows easy addition
     of heatmaps alongside trees.
 
-## 12. Understanding the Key Functions
+## 11. Understanding the Key Functions
 
 Let’s briefly review the key functions from our package that were used
 in this workflow:
@@ -489,33 +588,33 @@ Converting the calls to a standardized format (REF/ALT)
 
 The `pivot_on()` function rotates a phylogenetic tree to position a
 specific taxon at the top by: - Finding the node corresponding to the
-specified taxon - Re-rooting the tree at that node with a branch length
-of 0 - Preserving the original tree topology and branch lengths
+specified taxon - Traversing the tree structure to determine necessary
+rotations - Preserving the original tree topology and branch lengths
 
-### 3. Tree Visualization Function
+### 3. Tree Visualization Functions
 
-The `create_variant_heatmap_tree()` function creates publication-quality
-tree visualizations by: - Building a basic tree using ggtree - Adding a
-heatmap showing variant states for each taxon - Customizing the
-appearance with consistent formatting - Supporting additional data
-layers (like ancestry information)
+The ggtree package provides multiple functions for tree visualization: -
+`ggtree()`: Creates the basic tree structure - `geom_tippoint()`: Adds
+points at the tips representing data values - `geom_tiplab()`: Adds
+labels at the tips - `gheatmap()`: Adds heatmaps alongside the tree -
+`msaplot()`: Adds sequence alignment views
 
-## 13. Conclusion
+## 12. Conclusion
 
 This tutorial demonstrated how to use our specialized functions with the
 ggtree package to create advanced visualizations of phylogenetic trees
 with variant and ancestry information. We created:
 
 1.  Full tree visualizations with nucleotide and REF/ALT variant coding
-
 2.  Subset analyses focusing on donor taxa plus the B73 reference
-
-3.  Integrated heatmaps for variant visualization
+3.  Integrated heatmaps for variant and environmental data visualization
+4.  Sequence alignment views that provide direct visualization of the
+    underlying data
 
 These visualizations help reveal patterns of ancestry and genetic
 variation that would be difficult to detect through other means.
 
-## 14. Troubleshooting Tips
+## 13. Troubleshooting Tips
 
 - **Missing data issues**: Use the `%<+%` operator from ggtree to
   properly map data to the tree tips.

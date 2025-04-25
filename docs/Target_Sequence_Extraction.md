@@ -300,6 +300,14 @@ In this pipeline, we're specifically looking for lines with:
 The canonical transcript is important because many genes have alternative splicing that produces multiple transcripts, but we only want to extract one representative transcript per gene.
 
 ***Work in an interactive session***
+First, create a tab-separated file named `taxa_db.tab` with columns for the taxa name, the database name, and its correspnding `gene_targets_orthogroup.tab` column index.
+
+```
+B73	Zm-B73-REFERENCE-NAM-5.0	2
+TIL18	Zx-TIL18-REFERENCE-PanAnd-1.0	3
+TIL01	Zv-TIL01-REFERENCE-PanAnd-1.0	4
+TdFL	Td-FL_9056069_6-REFERENCE-PanAnd-2.0a	5
+```
 
 Create a script called `extract_canonical_transcripts.sh`:
 
@@ -307,52 +315,21 @@ Create a script called `extract_canonical_transcripts.sh`:
 #!/bin/bash
 # extract_canonical_transcripts.sh
 
-# Extract B73 canonical transcripts
-echo "Extracting B73 canonical transcripts..."
-
-# Create empty gff3
-> B73_gene_targets.gff3
-
-for t in $(cut -f2 gene_targets_orthogroup.tab); do
-  grep -w $t ref/Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gff3 | \
-  grep mRNA | \
-  grep "canonical_transcript=1" >> B73_gene_targets.gff3
-done
-
-# Extract mexicana canonical transcripts
-echo "Extracting TIL18 canonical transcripts..."
-# Create empty gff3
-> TIL18_gene_targets.gff3
-
-for t in $(cut -f3 gene_targets_orthogroup.tab); do
-  grep -w $t ref/Zx-TIL18-REFERENCE-PanAnd-1.0_Zx00002aa.1.gff3 | \
-  grep mRNA | \
-  grep "canonical_transcript=1" >> TIL18_gene_targets.gff3
-done
-
-# Extract parviglumis canonical transcripts
-echo "Extracting TIL01 canonical transcripts..."
-
-# Create empty gff3
-> TIL01_gene_targets.gff3
-
-for t in $(cut -f4 gene_targets_orthogroup.tab); do
-  grep -w $t ref/Zv-TIL01-REFERENCE-PanAnd-1.0_Zv00001aa.1.gff3 | \
-  grep mRNA | \
-  grep "canonical_transcript=1" >> TIL01_gene_targets.gff3
-done
-
-# Extract Tripsacum canonical transcripts
-echo "Extracting TdFL canonical transcripts..."
-
-# Create empty gff3
-> TdFL_gene_targets.gff3
-
-for t in $(cut -f5 gene_targets_orthogroup.tab); do
-  grep -w $t ref/Td-FL_9056069_6-REFERENCE-PanAnd-2.0a_Td00001bc.1.gff3 | \
-  grep mRNA | \
-  grep "canonical_transcript=1" >> TdFL_gene_targets.gff3
-done
+# Read taxa information from taxa_db.tab
+while IFS=$'\t' read -r GENOME FILE_PREFIX COL; do
+  echo "Extracting ${GENOME} canonical transcripts..."
+  
+  # Create empty gff3
+  > ${GENOME}_gene_targets.gff3
+  
+  # Use the appropriate column from the orthogroup table based on the COL value
+  for t in $(cut -f${COL} gene_targets_orthogroup.tab); do
+    grep -w $t ref/${FILE_PREFIX}_*.gff3 | \
+    grep mRNA | \
+    grep "canonical_transcript=1" >> ${GENOME}_gene_targets.gff3
+  done
+  
+done < taxa_db.tab
 
 echo "Canonical transcript annotations in gff3 files"
 
@@ -453,15 +430,6 @@ chmod +x extract_coordinates.sh
 See section 6 for full explanation of `blastdbcmd` fro sequence retrieval.
 
 ***Work in an interactive session***
-
-First, create a tab-separated file named `taxa_db.tab` with columns for the taxa name, the database name, and its correspnding `gene_targets_orthogroup.tab` column index.
-
-```
-B73	Zm-B73-REFERENCE-NAM-5.0	2
-TIL18	Zx-TIL18-REFERENCE-PanAnd-1.0	3
-TIL01	Zv-TIL01-REFERENCE-PanAnd-1.0	4
-TdFL	Td-FL_9056069_6-REFERENCE-PanAnd-2.0a	5
-```
 
 
 Then create the main script to extract sequences:

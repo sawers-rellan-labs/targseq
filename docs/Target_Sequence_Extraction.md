@@ -186,17 +186,17 @@ Without proper indexing, sequence retrieval would require linear scanning of pot
 
 ### 4. Identify Orthologous Genes
 ***Work in an interactive session***
-First, create a tab-separated file named `taxa_db.tab` with columns for the taxa name, the database name, and its correspnding `gene_targets_orthogroup.tab` column index.
+First, create a tab-separated file named `taxa_db.tab` with columns for the taxa name, the genome database name, the gene database name, and its correspnding `gene_targets_orthogroup.tab` column index.
 
 ```
-B73	Zm-B73-REFERENCE-NAM-5.0	Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gene	1
-TIL18	Zx-TIL18-REFERENCE-PanAnd-1.0	Td-FL_9056069_6-REFERENCE-PanAnd-2.0a_Td00001bc.1.gene	2
-TIL01	Zv-TIL01-REFERENCE-PanAnd-1.0	Zv-TIL01-REFERENCE-PanAnd-1.0_Zv00001aa.1.gene	3
-TIL11	Zv-TIL11-REFERENCE-PanAnd-1.0	Zv-TIL11-REFERENCE-PanAnd-1.0_Zv00002aa.1.gene	4
-TIL25	Zx-TIL25-REFERENCE-PanAnd-1.0	Zx-TIL25-REFERENCE-PanAnd-1.0_Zx00003aa.1.gene	5
-Momo	Zd-Momo-REFERENCE-PanAnd-1.0	Zd-Momo-REFERENCE-PanAnd-1.0_Zd00003aa.1.gene	6
-Zn	Zn-PI615697-REFERENCE-PanAnd-1.0	Zn-PI615697-REFERENCE-PanAnd-1.0_Zn00001aa.1.gene	7
-Td-FL	Td-FL_9056069_6-REFERENCE-PanAnd-2.0a	Td-FL_9056069_6-REFERENCE-PanAnd-2.0a_Td00001bc.1.gene	8
+B73	Zm-B73-REFERENCE-NAM-5.0	Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gene	2
+TIL18	Zx-TIL18-REFERENCE-PanAnd-1.0	Zx-TIL25-REFERENCE-PanAnd-1.0_Zx00003aa.1.gene	3
+TIL01	Zv-TIL01-REFERENCE-PanAnd-1.0	Zv-TIL01-REFERENCE-PanAnd-1.0_Zv00001aa.1.gene	4
+TIL11	Zv-TIL11-REFERENCE-PanAnd-1.0	Zv-TIL11-REFERENCE-PanAnd-1.0_Zv00002aa.1.gene	5
+TIL25	Zx-TIL25-REFERENCE-PanAnd-1.0	Zx-TIL25-REFERENCE-PanAnd-1.0_Zx00003aa.1.gene	6
+Momo	Zd-Momo-REFERENCE-PanAnd-1.0	Zd-Momo-REFERENCE-PanAnd-1.0_Zd00003aa.1.gene	7
+Zn	Zn-PI615697-REFERENCE-PanAnd-1.0	Zn-PI615697-REFERENCE-PanAnd-1.0_Zn00001aa.1.gene	8
+Td-FL	Td-FL_9056069_6-REFERENCE-PanAnd-2.0a	Td-FL_9056069_6-REFERENCE-PanAnd-2.0a_Td00001bc.1.gene	9
 ```
 
 Create a script called `identify_orthologs.sh`:
@@ -206,13 +206,42 @@ Create a script called `identify_orthologs.sh`:
 # identify_orthologs.sh
 
 # At some point we want to have all these taxa:
-# Zd Zea diploperennis
-# Zh Zea huhuetenagensis
+
+# Zd Zea diploperennis   
+# Zd-Gigi-REFERENCE-PanAnd-1.0
+# Zd-Momo-REFERENCE-PanAnd-1.0 ✓
+#
+# Zh Zea huehuetenangensis
+# Zh-RIMHU001-REFERENCE-PanAnd-1.0 
+#
 # Zl Zea luxurians
-# Zm Zea mays spp. mays ✓
-# Zv Zea mays spp. parviglumis
-# Zx Zea mays spp. mexicana ✓
-# Td Tripsacum dactyloides ✓
+# Zl-RIL003-REFERENCE-PanAnd-1.0 Pending annotation from liftovertools
+#
+# Zn Zea nicaraguensis.            ✓
+# Zn-PI615697-REFERENCE-PanAnd-1.0 ✓
+#
+# Zv Zea mays spp. parviglumis  ✓
+# Zv-TIL01-REFERENCE-PanAnd-1.0 ✓
+# Zv-TIL11-REFERENCE-PanAnd-1.0 ✓
+#
+# Zx Zea mays spp. mexicana.    ✓
+# Zx-TIL18-REFERENCE-PanAnd-1.0 ✓
+# Zx-TIL25-REFERENCE-PanAnd-1.0 ✓
+#
+# Td Tripsacum dactyloides             
+# Td-FL_9056069_6-REFERENCE-PanAnd-2.0 ✓
+# Td-KS_B6_1-REFERENCE-PanAnd-2.0
+
+# Zea mays from HiLo project
+# 
+# Zm Zm-CML457-REFERENCE-HiLo-1.0
+# Zm Zm-CML459-REFERENCE-HiLo-1.0
+# Zm Zm-CML530-REFERENCE-HiLo-1.0
+# Zm Zm-PDJ-REFERENCE-HiLo-1.0
+# Zm Zm-PT-REFERENCE-HiLo-1.0
+# Zm Zm-TAB-REFERENCE-HiLo-1.0
+# Zm Zm-ZAP-REFERENCE-HiLo-1.0 
+
 
 
 # Make sure B73_gene_targets.tab is tab separated
@@ -220,6 +249,8 @@ perl -i -pe 's/ +/\t/' B73_gene_targets.tab
 
 # Extract target B73 gene IDs
 cut -f1 B73_gene_targets.tab > B73_gene_targets.list
+# gene_targets_symbol.list
+cut -f2 B73_gene_targets.tab > c0.tmp
 
 # Prepare B73 sequences for BLAST
 echo "Extracting B73 target sequences..."
@@ -501,7 +532,7 @@ while IFS=$'\t' read -r TAXA DB GENEDB COL; do
   perl -i -pe "if(/>/){s/ /_${TAXA} /}" ${TAXA}_target_sequences.fasta
   
   # Clean up temporary files
-  rm *.tmp
+  # rm *.tmp
   
 done < ${TAXA_DB}
 

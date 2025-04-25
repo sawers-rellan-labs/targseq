@@ -336,7 +336,7 @@ Create a script called `extract_canonical_transcripts.sh`:
 # extract_canonical_transcripts.sh
 
 # Read taxa information from taxa_db.tab
-while IFS=$'\t' read -r GENOME FILE_PREFIX COL; do
+while IFS=$'\t' read -r GENOME FILE_PREFIX GENE_DB COL; do
   echo "Extracting ${GENOME} canonical transcripts..."
   
   # Create empty gff3

@@ -2,7 +2,7 @@ Package: targseq
 Title: Tools for targeted sequencing analysis
 Version: 0.1.0
 Authors@R: 
-    person("Your", "Name", email = "your.email@example.com", role = c("aut", "cre"))
+    person("Fausto", "Rodriguez Zapata", email = "frodrig4@ncsu.edu", role = c("aut", "cre"))
 Description: A package for analyzing maize genetic data, creating phylogenetic trees, 
     and visualizing genetic variants. This package provides tools for sequence alignment processing,
     variant extraction, tree rotation, and advanced visualization with ggtree.
@@ -19,6 +19,7 @@ Imports:
     ggplot2,
     ggnewscale,
     ggtree,
+    colorspace,
     phangorn,
     phytools,
     tidyverse

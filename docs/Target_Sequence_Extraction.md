@@ -186,6 +186,17 @@ Without proper indexing, sequence retrieval would require linear scanning of pot
 
 ### 4. Identify Orthologous Genes
 ***Work in an interactive session***
+First, create a tab-separated file named `taxa_db.tab` with columns for the taxa name, the database name, and its correspnding `gene_targets_orthogroup.tab` column index.
+
+```
+B73	Zm-B73-REFERENCE-NAM-5.0	Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gene	2
+TIL18	Zx-TIL18-REFERENCE-PanAnd-1.0	Td-FL_9056069_6-REFERENCE-PanAnd-2.0a_Td00001bc.1.gene	3
+TIL11	Zv-TIL11-REFERENCE-PanAnd-1.0	Zv-TIL11-REFERENCE-PanAnd-1.0_Zv00002aa.1.gene	4
+TIL25	Zv-TIL25-REFERENCE-PanAnd-1.0	Zx-TIL25-REFERENCE-PanAnd-1.0_Zx00003aa.1.gene	5
+Momo	Zd-Momo-REFERENCE-PanAnd-1.0	Zd-Momo-REFERENCE-PanAnd-1.0_Zd00003aa.1.gene	6
+Zn	Zn-PI615697-REFERENCE-PanAnd-1.0	Zn-PI615697-REFERENCE-PanAnd-1.0_Zn00001aa.1.gene	7
+Td-FL	Td-FL_9056069_6-REFERENCE-PanAnd-2.0a	Td-FL_9056069_6-REFERENCE-PanAnd-2.0a_Td00001bc.1.gene	8
+```
 
 Create a script called `identify_orthologs.sh`:
 
@@ -202,7 +213,8 @@ Create a script called `identify_orthologs.sh`:
 # Zx Zea mays spp. mexicana ✓
 # Td Tripsacum dactyloides ✓
 
-# Mahe sure  B73_gene_targets.tab is tab separated
+
+# Make sure B73_gene_targets.tab is tab separated
 perl -i -pe 's/ +/\t/' B73_gene_targets.tab
 
 # Extract target B73 gene IDs
@@ -217,47 +229,62 @@ blastdbcmd -db ref/Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gene \
 awk 'FNR==NR{a[">"$1]=$2;next} $1 in a{ sub(/>/,">"a[$1]" ",$1) }1' \
   B73_gene_targets.tab B73_gene_targets_genomic.fasta.tmp > B73_gene_targets_genomic.fasta
 
+# Set TIL18 column (assumed to be column 3)
+# This assumes TIL18 orthologs are already known (from OrthoMCL)
+# Modify this part based on your actual orthogroup data source
 ORTHOMCL_FILE="/rsstu/users/r/rrellan/DOE_CAREER/inv4m/synteny/results/Orthogroups.tsv"
 
 echo "Using OrthoMCL results from $ORTHOMCL_FILE"
-  
-  # Create temporary files for collecting ortholog info
-  > c2.tmp
-  
-  # For each target gene, find its orthologs in the OrthoMCL file
-  # select just one ortholog, remove protein suffix (_P001)
-  # remove problematic spaces
-  # convert from windows line endings to unix line endings
-  for t in $(cut -f1 B73_gene_targets.tab); do
-    grep $t $ORTHOMCL_FILE | \
-      perl -pe 's/,.*?\t/\t/g; s/_P\d+//g' | \
-      perl -pe 's/,\s\S+//g' | \
-      perl -pe 's/\r\n/\n/g' | \
-      cut -f2-4 >> c2.tmp
-  done
-  
-  # Get gene symbols for the first column
-  cut -f2 B73_gene_targets.tab > c1.tmp
 
-# BLAST against Tripsacum 
-# Omit when you run OrthoMCL on all taxa including Tripsacum
+# Process OrthoMCL data for TIL18
+for t in $(cut -f1 B73_gene_targets.tab); do
+  grep $t $ORTHOMCL_FILE | \
+    perl -pe 's/,.*?\t/\t/g; s/_P\d+//g' | \
+    perl -pe 's/,\s\S+//g' | \
+    perl -pe 's/\r\n/\n/g' | \
+    cut -f2-4 >> c1.tmp
+done
 
-echo "BLASTing against Tripsacum..."
-blastn -task megablast \
-  -query B73_gene_targets_genomic.fasta \
-  -db ref/Td-FL_9056069_6-REFERENCE-PanAnd-2.0a_Td00001bc.1.gene \
-  -outfmt 6 \
-  -num_alignments 1 -max_hsps 1 \
-  -num_threads 4 > TdFL.blast
 
-# Extract Tripsacum best hits (filtering out problematic hits)
-grep -v "gpat" TdFL.blast | grep -v "aaap69" | cut -f2 | sed 's/::.*//' > c3.tmp
+# Loop through taxa_db.tab and run BLAST against each non-B73, non-TIL18 gene database
+while IFS=$'\t' read -r GENOME GENOMIC_PREFIX GENE_DB COL; do
+  if [[ "$GENOME" != "B73" && "$GENOME" != "TIL18" ]]; then
+    echo "BLASTing against ${GENOME}..."
+    
+    # Check if genome has a gene DB
+    if [ -f "ref/${GENE_DB}.fa" ]; then
+      TARGET_DB="ref/${GENE_DB}"
+    else
+      # Use genome DB if no gene DB exists
+      echo "Gene db $TARGET_DB not found  for $GENOME"
+    fi
+    
+    blastn -task megablast \
+      -query B73_gene_targets_genomic.fasta \
+      -db "$TARGET_DB" \
+      -outfmt 6 \
+      -num_alignments 1 -max_hsps 1 \
+      -num_threads 4 > ${GENOME}.blast
+
+    # Extract best hits (filtering out problematic hits)
+    grep -v "gpat" ${GENOME}.blast | grep -v "aaap69" | cut -f2 | sed 's/::.*//' > c${COL}.tmp
+    
+    # If we didn't get enough hits, make empty entries for missing ones
+    NUM_TARGETS=$(wc -l < B73_gene_targets.tab)
+    NUM_HITS=$(wc -l < c${COL}.tmp)
+    
+    if [ $NUM_HITS -lt $NUM_TARGETS ]; then
+      # Pad with empty entries
+      perl -e "print '.\n' x $(($NUM_TARGETS - $NUM_HITS))" >> c${COL}.tmp
+    fi
+  fi
+done < taxa_db.tab
 
 # Combine all orthologs into final table
-paste c1.tmp c2.tmp c3.tmp > gene_targets_orthogroup.tab
+paste c*.tmp > gene_targets_orthogroup.tab
 
 # Clean up temporary files
-rm *.tmp
+rm c*.tmp *.blast *.tmp
 
 echo "The ortholog table was saved to gene_targets_orthogroup.tab:"
 echo ""
@@ -300,14 +327,7 @@ In this pipeline, we're specifically looking for lines with:
 The canonical transcript is important because many genes have alternative splicing that produces multiple transcripts, but we only want to extract one representative transcript per gene.
 
 ***Work in an interactive session***
-First, create a tab-separated file named `taxa_db.tab` with columns for the taxa name, the database name, and its correspnding `gene_targets_orthogroup.tab` column index.
 
-```
-B73	Zm-B73-REFERENCE-NAM-5.0	2
-TIL18	Zx-TIL18-REFERENCE-PanAnd-1.0	3
-TIL01	Zv-TIL01-REFERENCE-PanAnd-1.0	4
-TdFL	Td-FL_9056069_6-REFERENCE-PanAnd-2.0a	5
-```
 
 Create a script called `extract_canonical_transcripts.sh`:
 

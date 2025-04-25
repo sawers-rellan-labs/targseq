@@ -189,10 +189,11 @@ Without proper indexing, sequence retrieval would require linear scanning of pot
 First, create a tab-separated file named `taxa_db.tab` with columns for the taxa name, the database name, and its correspnding `gene_targets_orthogroup.tab` column index.
 
 ```
-B73	Zm-B73-REFERENCE-NAM-5.0	Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gene	2
-TIL18	Zx-TIL18-REFERENCE-PanAnd-1.0	Td-FL_9056069_6-REFERENCE-PanAnd-2.0a_Td00001bc.1.gene	3
+B73	Zm-B73-REFERENCE-NAM-5.0	Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gene	1
+TIL18	Zx-TIL18-REFERENCE-PanAnd-1.0	Td-FL_9056069_6-REFERENCE-PanAnd-2.0a_Td00001bc.1.gene	2
+TIL01	Zv-TIL01-REFERENCE-PanAnd-1.0	Zv-TIL01-REFERENCE-PanAnd-1.0_Zv00001aa.1.gene	3
 TIL11	Zv-TIL11-REFERENCE-PanAnd-1.0	Zv-TIL11-REFERENCE-PanAnd-1.0_Zv00002aa.1.gene	4
-TIL25	Zv-TIL25-REFERENCE-PanAnd-1.0	Zx-TIL25-REFERENCE-PanAnd-1.0_Zx00003aa.1.gene	5
+TIL25	Zx-TIL25-REFERENCE-PanAnd-1.0	Zx-TIL25-REFERENCE-PanAnd-1.0_Zx00003aa.1.gene	5
 Momo	Zd-Momo-REFERENCE-PanAnd-1.0	Zd-Momo-REFERENCE-PanAnd-1.0_Zd00003aa.1.gene	6
 Zn	Zn-PI615697-REFERENCE-PanAnd-1.0	Zn-PI615697-REFERENCE-PanAnd-1.0_Zn00001aa.1.gene	7
 Td-FL	Td-FL_9056069_6-REFERENCE-PanAnd-2.0a	Td-FL_9056069_6-REFERENCE-PanAnd-2.0a_Td00001bc.1.gene	8
@@ -246,9 +247,10 @@ for t in $(cut -f1 B73_gene_targets.tab); do
 done
 
 
-# Loop through taxa_db.tab and run BLAST against each non-B73, non-TIL18 gene database
+# Loop through taxa_db.tab and run BLAST against each 
+# genome that is not iin the orthomcl file (non-B73, non-TIL18, non-TIL01)
 while IFS=$'\t' read -r GENOME GENOMIC_PREFIX GENE_DB COL; do
-  if [[ "$GENOME" != "B73" && "$GENOME" != "TIL18" ]]; then
+  if [[ "$GENOME" != "B73" && "$GENOME" != "TIL18" && "$GENOME" != "TIL01" ]]; then
     echo "BLASTing against ${GENOME}..."
     
     # Check if genome has a gene DB
@@ -284,7 +286,7 @@ done < taxa_db.tab
 paste c*.tmp > gene_targets_orthogroup.tab
 
 # Clean up temporary files
-rm c*.tmp *.blast *.tmp
+rm *.blast *.tmp
 
 echo "The ortholog table was saved to gene_targets_orthogroup.tab:"
 echo ""
@@ -462,7 +464,7 @@ REF_DIR="./ref"
 TAXA_DB="taxa_db.tab"
 
 # Process each taxon
-while IFS=$'\t' read -r TAXA DB COL; do
+while IFS=$'\t' read -r TAXA DB GENEDB COL; do
   echo "Retrieving sequences from ${DB}..."
   
   # Extract sequences using coordinates

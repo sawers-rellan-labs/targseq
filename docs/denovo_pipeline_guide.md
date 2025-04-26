@@ -472,6 +472,7 @@ cut -f1 ${BLAST_DIR}/*_blast_results.txt |sed 's/_.*//g'| sort | uniq | while IF
          -o "logs/mafft_${GENE}.out" \
          -e "logs/mafft_${GENE}.err" \
          -n 2 -R "rusage[mem=4G]" \
+         -W 60 \
          "mafft --reorder --adjustdirection --nuc --auto  ${INPUT_FILE} | sed 's/^>_R_/>/' > ${OUTPUT_FILE}"
     echo "Submitted MAFFT alignment job for ${GENE}"
 done

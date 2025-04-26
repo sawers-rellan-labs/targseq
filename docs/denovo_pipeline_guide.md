@@ -397,7 +397,7 @@ awk '{if(NR==1) {print $0} else {if($0 ~ /^>/) {print "\n"$0} else {printf "%s",
 # Make single file for all genes, all taxa
 cat target_sequences.fasta   blast_results/*_best_hits.fasta | perl -pe 's/>/\n>/g' > blast_results/all_hits.fas 
 # Group the sequences by gene
-cut -f1 blast_results/*_blast_results.txt| sort |uniq | while IFS=$'\t' read -r GENE; do grep -A 1 "${GENE}" blast_results/all_hits.fas | grep -v -- "^--$" > blast_results/${GENE}.fas; done
+cut -f1 blast_results/*_blast_results.txt| sed 's/_.*//g'| sort |uniq | while IFS=$'\t' read -r GENE; do grep -A 1 "${GENE}" blast_results/all_hits.fas | grep -v -- "^--$" > blast_results/${GENE}.fas; done
 ```
 
 ### Running the Script
@@ -460,7 +460,7 @@ mkdir -p logs
 
 # Add MAFFT alignment step by gene group
 echo "Submitting MAFFT alignment jobs..."
-cut -f1 ${BLAST_DIR}/*_blast_results.txt | sort | uniq | while IFS=$'\t' read -r GENE; do
+cut -f1 ${BLAST_DIR}/*_blast_results.txt |sed 's/_.*//g'| sort | uniq | while IFS=$'\t' read -r GENE; do
     INPUT_FILE="${BLAST_DIR}/${GENE}.fas"
     OUTPUT_FILE="${ALIGNMENT_DIR}/${GENE}_aligned.fasta"
     

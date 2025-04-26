@@ -29,6 +29,7 @@ Downloading and saving files must be done in the login node.
 
 ## Workflow Steps
 
+
 ### 1. Prepare Your Gene Target List
 
 Create a tab-separated file named `B73_gene_targets.tab` with B73 gene IDs and gene symbols:
@@ -42,6 +43,72 @@ Zm00001eb268440 gdsl
 Zm00001eb372490 tcptf9
 ```
 
+### 2. Create Taxa Reference Table
+
+
+Create a tab-separated file named `taxa_db.tab` with columns for:
+1. Taxa short name (used for file naming)
+2. Genome file prefix (used for BLAST database)
+3. Gene database name (used for transcript extraction)
+4. Column position in orthogroup table (for mapping genes)
+
+```
+B73	Zm-B73-REFERENCE-NAM-5.0	Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gene	2
+Gigi	Zd-Gigi-REFERENCE-PanAnd-1.0	Zd-Gigi-REFERENCE-PanAnd-1.0_Zd00001aa.1.gene	7
+Momo	Zd-Momo-REFERENCE-PanAnd-1.0	Zd-Momo-REFERENCE-PanAnd-1.0_Zd00003aa.1.gene	8
+Zh	Zh-RIMHU001-REFERENCE-PanAnd-1.0	Zh-RIMHU001-REFERENCE-PanAnd-1.0_Zh00001aa.1.gene	9
+Zn	Zn-PI615697-REFERENCE-PanAnd-1.0	Zn-PI615697-REFERENCE-PanAnd-1.0_Zn00001aa.1.gene	10
+TIL01	Zv-TIL01-REFERENCE-PanAnd-1.0	Zv-TIL01-REFERENCE-PanAnd-1.0_Zv00001aa.1.gene	4
+TIL11	Zv-TIL11-REFERENCE-PanAnd-1.0	Zv-TIL11-REFERENCE-PanAnd-1.0_Zv00002aa.1.gene	6
+TIL18	Zx-TIL18-REFERENCE-PanAnd-1.0	Zx-TIL18-REFERENCE-PanAnd-1.0_Zx00002aa.1.gene	3
+TIL25	Zx-TIL25-REFERENCE-PanAnd-1.0	Zx-TIL25-REFERENCE-PanAnd-1.0_Zx00003aa.1.gene	5
+TdFL	Td-FL_9056069_6-REFERENCE-PanAnd-2.0a	Td-FL_9056069_6-REFERENCE-PanAnd-2.0a_Td00001bc.1.gene	11
+CML457	Zm-CML457-REFERENCE-HiLo-1.0	Zm-CML457-REFERENCE-HiLo-1.0_Zm00106aa.1.gene	12
+CML459	Zm-CML459-REFERENCE-HiLo-1.0	Zm-CML459-REFERENCE-HiLo-1.0_Zm00107aa.1.gene	13
+CML530	Zm-CML530-REFERENCE-HiLo-1.0	Zm-CML530-REFERENCE-HiLo-1.0_Zm00108aa.1.gene	14
+PDJ	Zm-PDJ-REFERENCE-HiLo-1.0	Zm-PDJ-REFERENCE-HiLo-1.0_Zm00112aa.1.gene	15
+PT	Zm-PT-REFERENCE-HiLo-1.0	Zm-PT-REFERENCE-HiLo-1.0_Zm00109aa.1.gene	16
+TAB	Zm-TAB-REFERENCE-HiLo-1.0	Zm-TAB-REFERENCE-HiLo-1.0_Zm00111aa.1.gene	17
+ZAP	Zm-ZAP-REFERENCE-HiLo-1.0	Zm-ZAP-REFERENCE-HiLo-1.0_Zm00110aa.1.gene	18
+```
+At some point we want to have all these taxa:
+
+#### Zd Zea diploperennis      ✓
+- Zd-Gigi-REFERENCE-PanAnd-1.0 ✓
+- Zd-Momo-REFERENCE-PanAnd-1.0 ✓
+
+#### Zh Zea huehuetenangensis
+- Zh-RIMHU001-REFERENCE-PanAnd-1.0 ✓
+
+#### Zl Zea luxurians ✘
+- Zl-RIL003-REFERENCE-PanAnd-1.0 Pending annotation from liftovertools
+
+#### Zn Zea nicaraguensis.         ✓
+- Zn-PI615697-REFERENCE-PanAnd-1.0 ✓
+
+#### Zv Zea mays spp. parviglumis  ✓
+- Zv-TIL01-REFERENCE-PanAnd-1.0    ✓
+- Zv-TIL11-REFERENCE-PanAnd-1.0    ✓
+
+#### Zx Zea mays spp. mexicana.    ✓
+- Zx-TIL18-REFERENCE-PanAnd-1.0    ✓
+- Zx-TIL25-REFERENCE-PanAnd-1.0    ✓
+
+#### Td Tripsacum dactyloides             
+- Td-FL_9056069_6-REFERENCE-PanAnd-2.0 ✓
+- Td-KS_B6_1-REFERENCE-PanAnd-2.0      ✘ no blast hits fro many genes
+
+#### Zea mays from HiLo project ✓
+
+- Zm-CML457-REFERENCE-HiLo-1.0 ✓
+- Zm-CML459-REFERENCE-HiLo-1.0 ✓
+- Zm-CML530-REFERENCE-HiLo-1.0 ✓
+- Zm-PDJ-REFERENCE-HiLo-1.0    ✓
+- Zm-PT-REFERENCE-HiLo-1.0     ✓
+- Zm-TAB-REFERENCE-HiLo-1.0    ✓
+- Zm-ZAP-REFERENCE-HiLo-1.0    ✓
+
+
 ### 2. Download Reference Genomes and Annotations
 
 ***The wget commands work only from the login node***
@@ -51,51 +118,70 @@ Create a script called `download_references.sh`:
 ```bash
 #!/bin/bash
 # download_references.sh
+# Script to download genome and annotation files for multiple maize taxa
 
-# At some point we want to complete sequences for the following taxa:
+# Function to download and decompress a file
+download_file() {
+  local url=$1
+  local output_file=$2
+  local file_type=$3
+  local final_name=$4
+  
+  if [ ! -f "$final_name" ]; then
+    echo "  Downloading $file_type..."
+    wget "$url"
+    gunzip "$output_file"
+    
+    # Rename if needed
+    if [ "$output_file" != "$final_name" ] && [ -f "$output_file" ]; then
+      mv "$output_file" "$final_name"
+    fi
+  else
+    echo "  $file_type already exists"
+  fi
+}
 
-# Zd Zea diploperennis
-# Zh Zea huhuetenagensis
-# Zl Zea luxurians
-# Zm Zea mays spp. mays ✓
-# Zv Zea mays spp. parviglumis
-# Zx Zea mays spp. mexicana ✓
-# Td Tripsacum dactyloides ✓
+# Create ref directory if it doesn't exist
+mkdir -p ref
+cd ref
 
-# Do not download databases if ref directory already exists
+# Read the taxa_db.tab file to get the list of genomes to download
+while IFS=$'\t' read -r GENOME GENOME_PREFIX GENE_DB COL; do
+  echo "Checking files for $GENOME..."
+  
+  # Extract GFF3 prefix from gene DB name
+  GFF3_PREFIX=$(echo $GENE_DB | sed 's/\.gene$//')
+  
+  # Determine base URL and file paths based on genome
+  if [[ "$GENOME" == "TdFL" ]]; then
+    BASE_URL="https://download.maizegdb.org/Td-FL_9056069_6-REFERENCE-PanAnd-2.0/Td-FL_9056069_6-REFERENCE-PanAnd-2.0a"
+    GENOME_FASTA="${GENOME_PREFIX}.fa.gz"
+    GENOME_OUTPUT="${GENOME_PREFIX}.fa"
+  elif [[ "$GENOME" == "TdKS" ]]; then
+    BASE_URL="https://download.maizegdb.org/Td-KS_B6_1-REFERENCE-PanAnd-2.0/Td-KS_B6_1-REFERENCE-PanAnd-2.0a"
+    GENOME_FASTA="Td-KS_B6_1-REFERENCE-PanAnd-2.0a.fa.gz"
+    GENOME_OUTPUT="Td-KS_B6_1-REFERENCE-PanAnd-2.0a.fa"
+  else
+    BASE_URL="https://download.maizegdb.org/${GENOME_PREFIX}"
+    GENOME_FASTA="${GENOME_PREFIX}.fa.gz"
+    GENOME_OUTPUT="${GENOME_PREFIX}.fa"
+  fi
+  
+  # Download genome FASTA
+  download_file "${BASE_URL}/${GENOME_FASTA}" "${GENOME_OUTPUT}" "genome FASTA for $GENOME" "${GENOME_PREFIX}.fa"
+  
+  # Download annotation GFF3
+  download_file "${BASE_URL}/${GFF3_PREFIX}.gff3.gz" "${GFF3_PREFIX}.gff3" "annotation GFF3 for $GENOME" "${GFF3_PREFIX}.gff3"
+  
+  # Download gene FASTA for ALL genomes
+  download_file "${BASE_URL}/${GENE_DB}.fa.gz" "${GENE_DB}.fa" "gene FASTA for $GENOME" "${GENE_DB}.fa"
+  
+  # PT chromosome numbers are padded in the gff3 but not in the reference
+  perl -i -p -e 's/chr0/chr/' Zm-PT-REFERENCE-HiLo-1.0_Zm00109aa.1.gff3
+done < ../taxa_db.tab
 
-if [ ! -d "ref" ]; then
-# Create working directory
-  mkdir -p ref
-  cd ref
-  
-  # B73 maize reference genome
-  wget 'https://download.maizegdb.org/Zm-B73-REFERENCE-NAM-5.0/Zm-B73-REFERENCE-NAM-5.0.fa.gz'
-  wget 'https://download.maizegdb.org/Zm-B73-REFERENCE-NAM-5.0/Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gene.fa.gz'
-  wget 'https://download.maizegdb.org/Zm-B73-REFERENCE-NAM-5.0/Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gff3.gz'
-  
-  # Teosinte parviglumis (TIL01)
-  wget 'https://download.maizegdb.org/Zv-TIL01-REFERENCE-PanAnd-1.0/Zv-TIL01-REFERENCE-PanAnd-1.0.fa.gz'
-  wget 'https://download.maizegdb.org/Zv-TIL01-REFERENCE-PanAnd-1.0/Zv-TIL01-REFERENCE-PanAnd-1.0_Zv00001aa.1.gff3.gz'
-  
-  # Teosinte mexicana (TIL18)
-  wget 'https://download.maizegdb.org/Zx-TIL18-REFERENCE-PanAnd-1.0/Zx-TIL18-REFERENCE-PanAnd-1.0.fa.gz'
-  wget 'https://download.maizegdb.org/Zx-TIL18-REFERENCE-PanAnd-1.0/Zx-TIL18-REFERENCE-PanAnd-1.0_Zx00002aa.1.gff3.gz'
-  
-  # Tripsacum dactyloides (Florida accession, because Z)
-  wget 'https://download.maizegdb.org/Td-FL_9056069_6-REFERENCE-PanAnd-2.0/Td-FL_9056069_6-REFERENCE-PanAnd-2.0a/Td-FL_9056069_6-REFERENCE-PanAnd-2.0a.fa.gz'
-  wget 'https://download.maizegdb.org/Td-FL_9056069_6-REFERENCE-PanAnd-2.0/Td-FL_9056069_6-REFERENCE-PanAnd-2.0a/Td-FL_9056069_6-REFERENCE-PanAnd-2.0a_Td00001bc.1.gff3.gz'
-  wget 'https://download.maizegdb.org/Td-FL_9056069_6-REFERENCE-PanAnd-2.0/Td-FL_9056069_6-REFERENCE-PanAnd-2.0a/Td-FL_9056069_6-REFERENCE-PanAnd-2.0a_Td00001bc.1.gene.fa.gz'
-  
-  # Uncompress all files
-  echo "Uncompressing files, this might take a couple of minutes..."
-  gunzip *.gz
-  echo "Done!"
-  
-  cd ..
-else
-echo "No downloads made, ref directory found."
-fi
+echo "All required files are now available in the ref directory"
+cd ..
 ```
 
 Make the script executable and run it:
@@ -128,17 +214,24 @@ Create a script called `create_blast_dbs.sh`:
 #!/bin/bash
 # create_blast_dbs.sh
 
+# Create BLAST databases for all downloaded FASTA files
+# These databases enable efficient sequence retrieval
+
 cd ref
 
 # Index all FASTA files for BLAST search and sequence retrieval
-
-if [ ! -d "$DIRECTORY" ]; then
-  for s in *.fa; do
-    OUTDB=$(echo $s | sed 's/\.fa$//')
-    echo "Creating BLAST database for $s..."
+for s in *.fa; do
+  OUTDB=$(echo $s | sed 's/\.fa$//')
+  
+  # Check if BLAST index files already exist
+  if [ -f "${OUTDB}.nin" ] && [ -f "${OUTDB}.nhr" ] && [ -f "${OUTDB}.nsq" ]; then
+    echo "BLAST database for $s already exists, skipping..."
+  else
+    echo "Creating BLAST database for $s this might take few minutes..."
     makeblastdb -in $s -out $OUTDB -dbtype nucl -parse_seqids
-  done
-fi
+  fi
+done
+
 cd ..
 ```
 
@@ -186,18 +279,7 @@ Without proper indexing, sequence retrieval would require linear scanning of pot
 
 ### 4. Identify Orthologous Genes
 ***Work in an interactive session***
-First, create a tab-separated file named `taxa_db.tab` with columns for the taxa name, the genome database name, the gene database name, and its correspnding `gene_targets_orthogroup.tab` column index.
-
-```
-B73	Zm-B73-REFERENCE-NAM-5.0	Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gene	2
-TIL18	Zx-TIL18-REFERENCE-PanAnd-1.0	Zx-TIL25-REFERENCE-PanAnd-1.0_Zx00003aa.1.gene	3
-TIL01	Zv-TIL01-REFERENCE-PanAnd-1.0	Zv-TIL01-REFERENCE-PanAnd-1.0_Zv00001aa.1.gene	4
-TIL11	Zv-TIL11-REFERENCE-PanAnd-1.0	Zv-TIL11-REFERENCE-PanAnd-1.0_Zv00002aa.1.gene	5
-TIL25	Zx-TIL25-REFERENCE-PanAnd-1.0	Zx-TIL25-REFERENCE-PanAnd-1.0_Zx00003aa.1.gene	6
-Momo	Zd-Momo-REFERENCE-PanAnd-1.0	Zd-Momo-REFERENCE-PanAnd-1.0_Zd00003aa.1.gene	7
-Zn	Zn-PI615697-REFERENCE-PanAnd-1.0	Zn-PI615697-REFERENCE-PanAnd-1.0_Zn00001aa.1.gene	8
-Td-FL	Td-FL_9056069_6-REFERENCE-PanAnd-2.0a	Td-FL_9056069_6-REFERENCE-PanAnd-2.0a_Td00001bc.1.gene	9
-```
+We'll need  `taxa_db.tab` again here.
 
 Create a script called `identify_orthologs.sh`:
 
@@ -205,93 +287,63 @@ Create a script called `identify_orthologs.sh`:
 #!/bin/bash
 # identify_orthologs.sh
 
-# At some point we want to have all these taxa:
-
-# Zd Zea diploperennis   
-# Zd-Gigi-REFERENCE-PanAnd-1.0
-# Zd-Momo-REFERENCE-PanAnd-1.0 ✓
-#
-# Zh Zea huehuetenangensis
-# Zh-RIMHU001-REFERENCE-PanAnd-1.0 
-#
-# Zl Zea luxurians
-# Zl-RIL003-REFERENCE-PanAnd-1.0 Pending annotation from liftovertools
-#
-# Zn Zea nicaraguensis.            ✓
-# Zn-PI615697-REFERENCE-PanAnd-1.0 ✓
-#
-# Zv Zea mays spp. parviglumis  ✓
-# Zv-TIL01-REFERENCE-PanAnd-1.0 ✓
-# Zv-TIL11-REFERENCE-PanAnd-1.0 ✓
-#
-# Zx Zea mays spp. mexicana.    ✓
-# Zx-TIL18-REFERENCE-PanAnd-1.0 ✓
-# Zx-TIL25-REFERENCE-PanAnd-1.0 ✓
-#
-# Td Tripsacum dactyloides             
-# Td-FL_9056069_6-REFERENCE-PanAnd-2.0 ✓
-# Td-KS_B6_1-REFERENCE-PanAnd-2.0
-
-# Zea mays from HiLo project
-# 
-# Zm Zm-CML457-REFERENCE-HiLo-1.0
-# Zm Zm-CML459-REFERENCE-HiLo-1.0
-# Zm Zm-CML530-REFERENCE-HiLo-1.0
-# Zm Zm-PDJ-REFERENCE-HiLo-1.0
-# Zm Zm-PT-REFERENCE-HiLo-1.0
-# Zm Zm-TAB-REFERENCE-HiLo-1.0
-# Zm Zm-ZAP-REFERENCE-HiLo-1.0 
-
-
+# This script identifies orthologous genes across all taxa
+# using either OrthoMCL results or BLAST searches
 
 # Make sure B73_gene_targets.tab is tab separated
 perl -i -pe 's/ +/\t/' B73_gene_targets.tab
 
 # Extract target B73 gene IDs
 cut -f1 B73_gene_targets.tab > B73_gene_targets.list
-# gene_targets_symbol.list
-cut -f2 B73_gene_targets.tab > c0.tmp
 
 # Prepare B73 sequences for BLAST
 echo "Extracting B73 target sequences..."
 blastdbcmd -db ref/Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gene \
-  -entry_batch B73_gene_targets.list > B73_gene_targets_genomic.fasta.tmp
+  -entry_batch B73_gene_targets.list > B73_gene_targets_genomic.fasta
 
 # Add gene symbols to FASTA headers
 awk 'FNR==NR{a[">"$1]=$2;next} $1 in a{ sub(/>/,">"a[$1]" ",$1) }1' \
-  B73_gene_targets.tab B73_gene_targets_genomic.fasta.tmp > B73_gene_targets_genomic.fasta
+  B73_gene_targets.tab B73_gene_targets_genomic.fasta > B73_gene_targets_genomic.fasta.tmp
+mv B73_gene_targets_genomic.fasta.tmp B73_gene_targets_genomic.fasta
 
-# Set TIL18 column (assumed to be column 3)
-# This assumes TIL18 orthologs are already known (from OrthoMCL)
-# Modify this part based on your actual orthogroup data source
+# Get gene symbols for the first column (column 01)
+cut -f2 B73_gene_targets.tab > c01.tmp
+
+# Use OrthoMCL data for pre-computed orthologs if available
 ORTHOMCL_FILE="/rsstu/users/r/rrellan/DOE_CAREER/inv4m/synteny/results/Orthogroups.tsv"
+if [ -f "$ORTHOMCL_FILE" ]; then
+  echo "Using OrthoMCL results from $ORTHOMCL_FILE"
+  
+  # Process OrthoMCL data for B73, TIL18, and TIL01 (columns 1-3)
+  for t in $(cut -f1 B73_gene_targets.tab); do
+    grep $t $ORTHOMCL_FILE | \
+      perl -pe 's/,.*?\t/\t/g; s/_P\d+//g' | \
+      perl -pe 's/,\s\S+//g' | \
+      perl -pe 's/\r\n/\n/g' | \
+      cut -f2-4 >> c02.tmp
+  done
+fi
 
-echo "Using OrthoMCL results from $ORTHOMCL_FILE"
-
-# Process OrthoMCL data for TIL18
-for t in $(cut -f1 B73_gene_targets.tab); do
-  grep $t $ORTHOMCL_FILE | \
-    perl -pe 's/,.*?\t/\t/g; s/_P\d+//g' | \
-    perl -pe 's/,\s\S+//g' | \
-    perl -pe 's/\r\n/\n/g' | \
-    cut -f2-4 >> c1.tmp
-done
-
-
-# Loop through taxa_db.tab and run BLAST against each 
-# genome that is not iin the orthomcl file (non-B73, non-TIL18, non-TIL01)
-while IFS=$'\t' read -r GENOME GENOMIC_PREFIX GENE_DB COL; do
+# Loop through taxa_db.tab and run BLAST against each taxon
+# Skip B73, TIL18, and TIL01
+while IFS=$'\t' read -r GENOME GENOME_PREFIX GENE_DB COL; do
+  # Ensure column number is padded to 2 digits
+  COL_PADDED=$(printf "%02d" $COL)
+  
+  # Skip B73, TIL18, and TIL01
   if [[ "$GENOME" != "B73" && "$GENOME" != "TIL18" && "$GENOME" != "TIL01" ]]; then
     echo "BLASTing against ${GENOME}..."
     
-    # Check if genome has a gene DB
+    # Check if the gene database exists
     if [ -f "ref/${GENE_DB}.fa" ]; then
       TARGET_DB="ref/${GENE_DB}"
     else
-      # Use genome DB if no gene DB exists
-      echo "Gene db $TARGET_DB not found  for $GENOME"
+      # Use genome database if gene database doesn't exist
+      TARGET_DB="ref/${GENOME_PREFIX}"
+      echo "Note: Using genome database for $GENOME as gene database not found"
     fi
     
+    # Run BLAST to find orthologs
     blastn -task megablast \
       -query B73_gene_targets_genomic.fasta \
       -db "$TARGET_DB" \
@@ -300,16 +352,12 @@ while IFS=$'\t' read -r GENOME GENOMIC_PREFIX GENE_DB COL; do
       -num_threads 4 > ${GENOME}.blast
 
     # Extract best hits (filtering out problematic hits)
-    grep -v "gpat" ${GENOME}.blast | grep -v "aaap69" | cut -f2 | sed 's/::.*//' > c${COL}.tmp
-    
-    # If we didn't get enough hits, make empty entries for missing ones
-    NUM_TARGETS=$(wc -l < B73_gene_targets.tab)
-    NUM_HITS=$(wc -l < c${COL}.tmp)
-    
-    if [ $NUM_HITS -lt $NUM_TARGETS ]; then
-      # Pad with empty entries
-      perl -e "print '.\n' x $(($NUM_TARGETS - $NUM_HITS))" >> c${COL}.tmp
-    fi
+    grep -v "gpat" ${GENOME}.blast | \
+      grep -v "aaap69" | \
+      cut -f2 | \
+      sed 's/::.*//' > c${COL_PADDED}.tmp
+  else
+    echo "Skipping BLAST for ${GENOME} (using OrthoMCL data or already processed)"
   fi
 done < taxa_db.tab
 
@@ -317,7 +365,7 @@ done < taxa_db.tab
 paste c*.tmp > gene_targets_orthogroup.tab
 
 # Clean up temporary files
-rm *.blast *.tmp
+rm c*.tmp *.blast
 
 echo "The ortholog table was saved to gene_targets_orthogroup.tab:"
 echo ""
@@ -368,33 +416,49 @@ Create a script called `extract_canonical_transcripts.sh`:
 #!/bin/bash
 # extract_canonical_transcripts.sh
 
+# This script extracts canonical transcript coordinates for each gene
+# across all taxa from their respective GFF3 annotation files
+
 # Read taxa information from taxa_db.tab
-while IFS=$'\t' read -r GENOME FILE_PREFIX GENE_DB COL; do
+while IFS=$'\t' read -r GENOME GENOME_PREFIX GENE_DB COL; do
   echo "Extracting ${GENOME} canonical transcripts..."
-  
-  # Create empty gff3
+
+  # Extract GFF3 prefix from gene DB name (remove .gene suffix)
+  GFF3_PREFIX=$(echo $GENE_DB | sed 's/\.gene$//')
+  echo "${GFF3_PREFIX}.gff3"
+
+  # Create empty GFF3 file for this taxon
   > ${GENOME}_gene_targets.gff3
-  
-  # Use the appropriate column from the orthogroup table based on the COL value
+
+  # Extract canonical transcripts for each gene
+  # Use the appropriate column from orthogroup table based on the COL value
+  # Ensure column number is padded to 2 digits for consistency
+  COL_PADDED=$(printf "%02d" $COL)
+
   for t in $(cut -f${COL} gene_targets_orthogroup.tab); do
-    grep -w $t ref/${FILE_PREFIX}_*.gff3 | \
-    grep mRNA | \
-    grep "canonical_transcript=1" >> ${GENOME}_gene_targets.gff3
+    # Skip empty entries
+    if [[ "$t" != "." ]]; then
+      # Find canonical transcript and append to GFF3 file
+      # Use the GFF3_PREFIX derived from GENE_DB column for the gff3 file
+      grep -w $t ref/${GFF3_PREFIX}.gff3 | \
+        grep mRNA | \
+        grep "canonical_transcript=1" >> ${GENOME}_gene_targets.gff3
+    fi
   done
-  
+
+  # Report number of transcripts found
+  COUNT=$(wc -l < ${GENOME}_gene_targets.gff3)
+  echo "  Found $COUNT canonical transcripts for $GENOME"
+
 done < taxa_db.tab
 
-echo "Canonical transcript annotations in gff3 files"
+echo "Canonical transcript annotations in GFF3 files"
 
-# Show file name and first line of the gff files
-head -n 1 *_gene_targets.gff3
-```
-
-Make the script executable and run it:
-
-```bash
-chmod +x extract_canonical_transcripts.sh
-./extract_canonical_transcripts.sh
+# Show summary of GFF files
+for GENOME in $(cut -f1 taxa_db.tab); do
+  COUNT=$(wc -l < ${GENOME}_gene_targets.gff3)
+  echo "$GENOME: $COUNT transcripts"
+done
 ```
 
 ### 6. Create Coordinate Files with Flanking Regions
@@ -490,6 +554,7 @@ Then create the main script to extract sequences:
 ```bash
 #!/bin/bash
 # get_target_sequences.sh
+# this is a slow step maybe do it with samtools
 
 REF_DIR="./ref"
 TAXA_DB="taxa_db.tab"
@@ -557,9 +622,8 @@ Here's a master script that runs all steps in sequence:
 # run_sequence_extraction_pipeline.sh
 
 echo "1. Creating BLAST databases..."
-if [ ! -d ref ]; then
- bash create_blast_dbs.sh
-fi
+
+bash create_blast_dbs.sh
 
 echo "2. Identifying orthologous genes..."
 bash identify_orthologs.sh

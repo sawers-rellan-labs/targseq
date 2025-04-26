@@ -81,7 +81,7 @@ At some point we want to have all these taxa:
 - Zh-RIMHU001-REFERENCE-PanAnd-1.0 ✓
 
 #### Zl Zea luxurians ✘
-- Zl-RIL003-REFERENCE-PanAnd-1.0 Pending annotation from liftovertools
+- Zl-RIL003-REFERENCE-PanAnd-1.0 ✘ Pending annotation from liftovertools
 
 #### Zn Zea nicaraguensis.         ✓
 - Zn-PI615697-REFERENCE-PanAnd-1.0 ✓

@@ -35,12 +35,12 @@ Downloading and saving files must be done in the login node.
 Create a tab-separated file named `B73_gene_targets.tab` with B73 gene IDs and gene symbols:
 
 ```
-Zm00001eb062030 ipt6
-Zm00001eb121780 hpc1
-Zm00001eb206940 nrg11
-Zm00001eb231720 nlp1
-Zm00001eb268440 gdsl
-Zm00001eb372490 tcptf9
+ipt6	Zm00001eb062030
+hpc1	Zm00001eb121780
+nrg11	Zm00001eb206940
+nlp1	Zm00001eb231720
+gdsl	Zm00001eb268440
+tcptf9	Zm00001eb372490
 ```
 
 ### 2. Create Taxa Reference Table
@@ -294,7 +294,7 @@ Create a script called `identify_orthologs.sh`:
 perl -i -pe 's/ +/\t/' B73_gene_targets.tab
 
 # Extract target B73 gene IDs
-cut -f1 B73_gene_targets.tab > B73_gene_targets.list
+cut -f2 B73_gene_targets.tab > B73_gene_targets.list
 
 # Prepare B73 sequences for BLAST
 echo "Extracting B73 target sequences..."
@@ -307,7 +307,7 @@ awk 'FNR==NR{a[">"$1]=$2;next} $1 in a{ sub(/>/,">"a[$1]" ",$1) }1' \
 mv B73_gene_targets_genomic.fasta.tmp B73_gene_targets_genomic.fasta
 
 # Get gene symbols for the first column (column 01)
-cut -f2 B73_gene_targets.tab > c01.tmp
+cut -f1 B73_gene_targets.tab > c01.tmp
 
 # Use OrthoMCL data for pre-computed orthologs if available
 ORTHOMCL_FILE="/rsstu/users/r/rrellan/DOE_CAREER/inv4m/synteny/results/Orthogroups.tsv"
@@ -315,7 +315,7 @@ if [ -f "$ORTHOMCL_FILE" ]; then
   echo "Using OrthoMCL results from $ORTHOMCL_FILE"
   
   # Process OrthoMCL data for B73, TIL18, and TIL01 (columns 1-3)
-  for t in $(cut -f1 B73_gene_targets.tab); do
+  for t in $(cut -f2 B73_gene_targets.tab); do
     grep $t $ORTHOMCL_FILE | \
       perl -pe 's/,.*?\t/\t/g; s/_P\d+//g' | \
       perl -pe 's/,\s\S+//g' | \

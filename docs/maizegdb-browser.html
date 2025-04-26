@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MaizeGDB Genome Browser</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            display: flex;
+            height: 100%;
+        }
+        .sidebar {
+            width: 300px;
+            background-color: #f5f5f5;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        .content {
+            flex: 1;
+            height: 100%;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        h1 {
+            font-size: 1.4em;
+            margin-top: 0;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        li {
+            padding: 8px 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        li:hover {
+            background-color: #e9e9e9;
+        }
+        .selected {
+            background-color: #dbeafe;
+            font-weight: bold;
+        }
+        .group-header {
+            font-weight: bold;
+            padding: 10px 5px 5px 5px;
+            margin-top: 10px;
+            border-bottom: 1px solid #ccc;
+            color: #444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h1>MaizeGDB Genomes</h1>
+            <ul id="genomeList">
+                <div class="group-header">Zea mays (B73)</div>
+                <li data-genome="Zm-B73-REFERENCE-NAM-5.0" data-special="false">Zm-B73-REFERENCE-NAM-5.0</li>
+                
+                <div class="group-header">Zea diploperennis (Zd)</div>
+                <li data-genome="Zd-Gigi-REFERENCE-PanAnd-1.0" data-special="false">Zd-Gigi-REFERENCE-PanAnd-1.0</li>
+                <li data-genome="Zd-Momo-REFERENCE-PanAnd-1.0" data-special="false">Zd-Momo-REFERENCE-PanAnd-1.0</li>
+                
+                <div class="group-header">Zea huehuetenangensis (Zh)</div>
+                <li data-genome="Zh-RIMHU001-REFERENCE-PanAnd-1.0" data-special="false">Zh-RIMHU001-REFERENCE-PanAnd-1.0</li>
+                
+                <div class="group-header">Zea luxurians (Zl)</div>
+                <li data-genome="Zl-RIL003-REFERENCE-PanAnd-1.0" data-special="false">Zl-RIL003-REFERENCE-PanAnd-1.0</li>
+                
+                <div class="group-header">Zea nicaraguensis (Zn)</div>
+                <li data-genome="Zn-PI615697-REFERENCE-PanAnd-1.0" data-special="false">Zn-PI615697-REFERENCE-PanAnd-1.0</li>
+                
+                <div class="group-header">Zea mays spp. parviglumis (Zv)</div>
+                <li data-genome="Zv-TIL01-REFERENCE-PanAnd-1.0" data-special="false">Zv-TIL01-REFERENCE-PanAnd-1.0</li>
+                <li data-genome="Zv-TIL11-REFERENCE-PanAnd-1.0" data-special="false">Zv-TIL11-REFERENCE-PanAnd-1.0</li>
+                
+                <div class="group-header">Zea mays spp. mexicana (Zx)</div>
+                <li data-genome="Zx-TIL18-REFERENCE-PanAnd-1.0" data-special="false">Zx-TIL18-REFERENCE-PanAnd-1.0</li>
+                <li data-genome="Zx-TIL25-REFERENCE-PanAnd-1.0" data-special="false">Zx-TIL25-REFERENCE-PanAnd-1.0</li>
+                
+                <div class="group-header">Tripsacum dactyloides (Td)</div>
+                <li data-genome="Td-FL_9056069_6-REFERENCE-PanAnd-2.0" data-special="true" data-subfolder="Td-FL_9056069_6-REFERENCE-PanAnd-2.0a">Td-FL_9056069_6-REFERENCE-PanAnd-2.0a</li>
+                <li data-genome="Td-KS_B6_1-REFERENCE-PanAnd-2.0" data-special="true" data-subfolder="Td-KS_B6_1-REFERENCE-PanAnd-2.0a">Td-KS_B6_1-REFERENCE-PanAnd-2.0a</li>
+                
+                <div class="group-header">Zea mays (HiLo project)</div>
+                <li data-genome="Zm-CML457-REFERENCE-HiLo-1.0" data-special="false">Zm-CML457-REFERENCE-HiLo-1.0</li>
+                <li data-genome="Zm-CML459-REFERENCE-HiLo-1.0" data-special="false">Zm-CML459-REFERENCE-HiLo-1.0</li>
+                <li data-genome="Zm-CML530-REFERENCE-HiLo-1.0" data-special="false">Zm-CML530-REFERENCE-HiLo-1.0</li>
+                <li data-genome="Zm-PDJ-REFERENCE-HiLo-1.0" data-special="false">Zm-PDJ-REFERENCE-HiLo-1.0</li>
+                <li data-genome="Zm-PT-REFERENCE-HiLo-1.0" data-special="false">Zm-PT-REFERENCE-HiLo-1.0</li>
+                <li data-genome="Zm-TAB-REFERENCE-HiLo-1.0" data-special="false">Zm-TAB-REFERENCE-HiLo-1.0</li>
+                <li data-genome="Zm-ZAP-REFERENCE-HiLo-1.0" data-special="false">Zm-ZAP-REFERENCE-HiLo-1.0</li>
+            </ul>
+        </div>
+        <div class="content">
+            <iframe id="contentFrame" src="about:blank"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // Base URL for MaizeGDB
+        const BASE_URL = "https://download.maizegdb.org/";
+        
+        // Add click event listeners to all genome items
+        document.querySelectorAll('#genomeList li').forEach(item => {
+            item.addEventListener('click', function() {
+                const genomeName = this.getAttribute('data-genome');
+                const isSpecial = this.getAttribute('data-special') === 'true';
+                const subfolder = this.getAttribute('data-subfolder');
+                loadGenome(genomeName, isSpecial, subfolder);
+            });
+        });
+        
+        function loadGenome(genomeName, isSpecial = false, subfolder = null) {
+            // Update selected item styling
+            const items = document.querySelectorAll('#genomeList li');
+            items.forEach(item => {
+                item.classList.remove('selected');
+                if (item.getAttribute('data-genome') === genomeName) {
+                    item.classList.add('selected');
+                }
+            });
+            
+            // Load the genome URL in the iframe with special handling for Tripsacum genomes
+            let url;
+            if (isSpecial && subfolder) {
+                url = BASE_URL + genomeName + "/" + subfolder + "/";
+            } else {
+                url = BASE_URL + genomeName + "/";
+            }
+            
+            document.getElementById('contentFrame').src = url;
+            
+            // Update the page title
+            const displayName = isSpecial ? subfolder : genomeName;
+            document.title = "MaizeGDB - " + displayName;
+        }
+        
+        // Load the first genome by default
+        window.onload = function() {
+            loadGenome('Zm-B73-REFERENCE-NAM-5.0');
+        };
+    </script>
+</body>
+</html>

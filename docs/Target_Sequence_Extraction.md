@@ -178,6 +178,7 @@ while IFS=$'\t' read -r GENOME GENOME_PREFIX GENE_DB COL; do
   
   # PT chromosome numbers are padded in the gff3 but not in the reference
   perl -i -p -e 's/chr0/chr/' Zm-PT-REFERENCE-HiLo-1.0_Zm00109aa.1.gff3
+  
 done < ../taxa_db.tab
 
 echo "All required files are now available in the ref directory"

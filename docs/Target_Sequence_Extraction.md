@@ -38,7 +38,7 @@ Create a tab-separated file named `B73_gene_targets.tab` with B73 gene IDs and g
 ipt6	Zm00001eb062030
 hpc1	Zm00001eb121780
 nrg11	Zm00001eb206940
-nlp1	Zm00001eb231720
+nlp15	Zm00001eb231720
 gdsl	Zm00001eb268440
 tcptf9	Zm00001eb372490
 ```

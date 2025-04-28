@@ -49,11 +49,13 @@ target_genes <- targets$symbol
 # Read the main selection data
 # Source: https://docs.google.com/spreadsheets/d/1gsZ017XvS_xLZkXzBmKT7e4DL5aiEld8AcxfeJ2KNwc/edit
 
-final_selection <- read.csv("~/Desktop/FINAL_SELECTION.csv")
+NIL_file <- system.file("extdata", "FINAL_SELECTION.csv", package="targseq")
+final_selection <- read.csv(NIL_file)
 
+sample_annotation_file <- system.file("extdata", "sample_annotation.csv", package="targseq")
 # Read and preprocess sample annotation data
 
-sample_annotation <- read.csv("~/Desktop/sample_annotation.csv") %>%
+sample_annotation <- read.csv(sample_annotation_file) %>%
   select(fastq_prefix, fastq_sample) %>%
   arrange(fastq_prefix, fastq_sample) %>%
   distinct() %>%

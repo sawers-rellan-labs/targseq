@@ -1,7 +1,7 @@
 Maize Phylogeny Analysis with Multiple Variants
 ================
 Maize Genetics Lab
-2025-04-23
+2025-04-28
 
 - [1. Setting up the Environment](#1-setting-up-the-environment)
 - [2. Reading Input Files](#2-reading-input-files)
@@ -172,14 +172,37 @@ Next, we’ll trim the alignment to focus on the region of interest:
 # Load GenomicRanges for efficient sequence manipulation
 library(GenomicRanges)
 
-# Define trimming ranges (starting from position 2226 to the end)
+# Define the TSS
+
+# Define transcription start site from the gene sequence in maizegdb
+TSS <- "CCAAAGGCCCGTCGTACTCGTGCTAC"
+
+# Matching TSS to alignment 
+TSS_match <- vmatchPattern(TSS, filtered_alignment)[[1]]
+ 
+TSS_start <- start(TSS_match)
+
+
+# termination signal 
+TERS <- "TTTTCATCTTTCTGTTTGGT"
+
+TERS_match <- vmatchPattern(TERS, filtered_alignment)[[1]]
+TERS_end <- end(TERS_match)
+
+n_taxa <- length(filtered_alignment)
+n_pos <-  width(filtered_alignment)
+
 trimmedRanges <- GRanges(
   seqnames = names(filtered_alignment),
   ranges = IRanges(
-    start = rep(2226, n_taxa),
-    end = rep(n_pos, n_taxa)
+    start = rep(TSS_start, n_taxa),
+    end = rep(TERS_end, n_taxa)
   )
 )
+
+# Perform the trimming operation
+trimmed_alignment <- filtered_alignment[trimmedRanges]
+
 
 # Perform the trimming operation
 trimmed_alignment <- filtered_alignment[trimmedRanges]
@@ -564,10 +587,6 @@ Let’s examine the complete file structure with all our inputs and
 outputs:
 
     ## tree_plotting/
-
-    ## ├── hpc1_aligned.fasta              # Input: Original alignment file
-
-    ## ├── seqid_label.csv                 # Input: Metadata mapping file
 
     ## ├── hpc1_nice_labels.fasta          # Output: Alignment with renamed sequences
 

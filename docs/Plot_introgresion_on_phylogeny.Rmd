@@ -74,7 +74,7 @@ if (!dir.exists(project_dir)) {
   dir.create(project_dir)
 }
 
-# Set file paths within the project directory
+# Get data from package installation
 aln_file <-  system.file("extdata", "hpc1_aligned.fasta", package="targseq")
 
 metadata_file <- system.file("extdata", "seqid_label.csv", package="targseq")
@@ -176,10 +176,6 @@ trimmedRanges <- GRanges(
     end = rep(TERS_end, n_taxa)
   )
 )
-
-# Perform the trimming operation
-trimmed_alignment <- filtered_alignment[trimmedRanges]
-
 
 # Perform the trimming operation
 trimmed_alignment <- filtered_alignment[trimmedRanges]

@@ -166,8 +166,14 @@ ref_label<- expand.grid(
     fastq_sample = NA,
     sample_n = NA,
     seqid = paste0(gene, "_", accession),
-    ancestry_call = ifelse(accession == "B73", "Recurrent", "Donor"),
-    ancestry_prefix = ifelse(accession == "B73", "R", "D"),
+    ancestry_call = case_when(
+      accession == "B73" ~ "Recurrent",
+      accession == "TdFl" ~ NA,
+      .default ="Donor"),
+    ancestry_prefix = case_when(
+      accession == "B73" ~ "R", 
+      accession == "TdFL" ~ NA,
+      .default = "D"),
     donor_accession = NA,
     label_1 = seqid
   )

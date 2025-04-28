@@ -453,7 +453,7 @@ ancestry_miscall <- read.csv(ancestry_mismatch_file) %>%
 # Create a subset of taxa with donor ancestry plus B73
 donor_subset <- name_map %>%
   mutate(label=label_3) %>%
-  filter(ancestry_call == "Donor" | label == b73_label) %>%
+  filter(ancestry_call == "Donor" | label == b73_label| grepl(seqid,"TdFL")) %>%
   # filter ancestry_miscalls
   filter(!seqid %in% ancestry_miscall$seqid)
 

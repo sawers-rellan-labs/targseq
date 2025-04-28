@@ -122,20 +122,86 @@ head(seqid_label)
 # 5. REFERENCE DATA CREATION
 #-------------------------------------------------------------------------------
 
-# Define reference data string for B73 and TIL18 samples
-ref_string <- "gene fastq_prefix fastq_sample sample_n seqid  ancestry_call  ancestry_prefix donor_accession label_1 label_2 label_3
-              hpc1 NA NA  NA hpc1_B73  Recurrent  R NA  hpc1_B73 R_Zm_B73 Zm_B73
-              hpc1 NA NA  NA hpc1_TIL18  Donor  D NA hpc1_TIL18 D_Zx_TIL18 Zx_TIL18"
+# Taxa database table
+taxa_db <- read.table(text = "
+B73     Zm-B73-REFERENCE-NAM-5.0   1
+TIL18   Zx-TIL18-REFERENCE-PanAnd-1.0      2
+TIL01   Zv-TIL01-REFERENCE-PanAnd-1.0      3
+TdFL    Td-FL_9056069_6-REFERENCE-PanAnd-2.0a      4
+Zd      Zd-Gigi-REFERENCE-PanAnd-1.0       5
+Zh      Zh-RIMHU001-REFERENCE-PanAnd-1.0   6
+PT      Zm-PT-REFERENCE-HiLo-1.0   7
+TIL11   Zv-TIL11-REFERENCE-PanAnd-1.0      8
+TIL25   Zx-TIL25-REFERENCE-PanAnd-1.0      9
+Momo    Zd-Momo-REFERENCE-PanAnd-1.0       10
+Zn      Zn-PI615697-REFERENCE-PanAnd-1.0   11", 
+                      header = FALSE, 
+                      col.names = c("accession", "reference_name", "id"))
 
-# Create reference dataset for all target genes
-ref_label <- lapply(target_genes, FUN = function(x){
-  # Replace "hpc1" with current gene name in reference string
-  data_string <- gsub("hpc1", x, ref_string, fixed = TRUE) 
-  # Parse the modified string as a data frame
-  read.table(text = data_string, header = TRUE, na.strings = "NA")
-}) %>% bind_rows()
+# Extract species prefix from reference_name
+taxa_db <- taxa_db %>%
+  mutate(species_prefix = sub("^(\\w+)-.*$", "\\1", reference_name),
+         accession_name = sub("^\\w+-([^-]+).*$", "\\1", reference_name))
 
-write_csv(ref_label, "~/Desktop/ref_label.csv")
+# List of target genes
+target_genes <- c("ipt6", "hpc1", "nrg11", "nlp1", "gdsl", "tcptf9")
+gene_ids <- c(
+  "ipt6" = "Zm00001eb062030",
+  "hpc1" = "Zm00001eb121780",
+  "nrg11" = "Zm00001eb206940",
+  "nlp1" = "Zm00001eb231720",
+  "gdsl" = "Zm00001eb268440",
+  "tcptf9" = "Zm00001eb372490"
+)
+
+# Create a data frame with all combinations of genes and accessions
+ref_label<- expand.grid(
+  gene = target_genes,
+  accession = taxa_db$accession,
+  stringsAsFactors = FALSE
+) %>%
+  left_join(taxa_db, by = "accession") %>%
+  mutate(
+    fastq_prefix = NA,
+    fastq_sample = NA,
+    sample_n = NA,
+    seqid = paste0(gene, "_", accession),
+    ancestry_call = ifelse(accession == "B73", "Recurrent", "Donor"),
+    ancestry_prefix = ifelse(accession == "B73", "R", "D"),
+    donor_accession = NA,
+    label_1 = seqid
+  )
+
+# Fix the redundancy issue in label_2 and label_3 for Zd, Zn, and Zh
+ref_label <- ref_label %>%
+  mutate(
+    # Handle the special cases for label_2
+    label_2 = case_when(
+      accession == "Zd" & species_prefix == "Zd" ~ paste0(ancestry_prefix, "_Zd"),
+      accession == "Zn" & species_prefix == "Zn" ~ paste0(ancestry_prefix, "_Zn"),
+      accession == "Zh" & species_prefix == "Zh" ~ paste0(ancestry_prefix, "_Zh"),
+      TRUE ~ paste0(ancestry_prefix, "_", species_prefix, "_", accession)
+    ),
+    # Handle the special cases for label_3
+    label_3 = case_when(
+      accession == "Zd" & species_prefix == "Zd" ~ "Zd",
+      accession == "Zn" & species_prefix == "Zn" ~ "Zn",
+      accession == "Zh" & species_prefix == "Zh" ~ "Zh",
+      TRUE ~ paste0(species_prefix, "_", accession)
+    )
+  ) %>%
+  select(
+    gene, fastq_prefix, fastq_sample, sample_n, seqid, 
+    ancestry_call, ancestry_prefix, donor_accession, 
+    label_1, label_2, label_3
+  )
+
+# View the result
+head(ref_label)
+ref_label
+
+# Write the result to a file if needed
+# write.table(result, "updated_gene_table.tsv", sep="\t", quote=FALSE, row.names=FALSE)
 
 
 #-------------------------------------------------------------------------------

@@ -36,6 +36,7 @@ if (!dir.exists(project_dir)) {
 # Define genes for target sequencing  
 
 target_file <-  system.file("extdata", "B73_gene_targets.tab", package="targseq")
+
 targets <-  read.table(target_file, header=FALSE, sep="\t",
                        col.names = c("symbol", "locus"))
 

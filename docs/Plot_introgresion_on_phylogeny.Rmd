@@ -104,7 +104,7 @@ Now we'll prepare our sequence names and map them to meaningful labels:
 ```{r create_mapping}
 # Extract sequence IDs from the alignment and remove description fields
 seq_ids <- names(original_alignment)
-trimmed_ids <- gsub("\\s.*", "", seq_ids, perl=TRUE)
+trimmed_ids <- gsub(" .*", "", seq_ids, perl=TRUE)
 
 # Verify sequence ID counts match
 cat("Original sequence count:", length(original_alignment), "\n")

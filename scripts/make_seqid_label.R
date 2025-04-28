@@ -34,7 +34,12 @@ if (!dir.exists(project_dir)) {
 }
 
 # Define genes for target sequencing  
-target_genes <- c("hpc1", "gpat15", "nrg11", "ipt6", "tcptf9", "nlp15", "gdsl")
+
+target_file <-  system.file("extdata", "B73_gene_targets.tab", package="targseq")
+targets <-  read.table(target_file, header=FALSE, sep="\t",
+                       col.names = c("symbol", "locus"))
+
+target_genes <- targets$symbol
 
 #-------------------------------------------------------------------------------
 # 2. DATA IMPORT
@@ -123,56 +128,41 @@ head(seqid_label)
 #-------------------------------------------------------------------------------
 
 # Taxa database table
-taxa_db <- read.table(text = "
-B73     Zm-B73-REFERENCE-NAM-5.0   1
-TIL18   Zx-TIL18-REFERENCE-PanAnd-1.0      2
-TIL01   Zv-TIL01-REFERENCE-PanAnd-1.0      3
-TdFL    Td-FL_9056069_6-REFERENCE-PanAnd-2.0a      4
-Zd      Zd-Gigi-REFERENCE-PanAnd-1.0       5
-Zh      Zh-RIMHU001-REFERENCE-PanAnd-1.0   6
-PT      Zm-PT-REFERENCE-HiLo-1.0   7
-TIL11   Zv-TIL11-REFERENCE-PanAnd-1.0      8
-TIL25   Zx-TIL25-REFERENCE-PanAnd-1.0      9
-Momo    Zd-Momo-REFERENCE-PanAnd-1.0       10
-Zn      Zn-PI615697-REFERENCE-PanAnd-1.0   11", 
-                      header = FALSE, 
-                      col.names = c("accession", "reference_name", "id"))
 
-# Extract species prefix from reference_name
+taxa_db_file <- system.file("extdata", "taxa_db.tab", package="targseq")
+
+taxa_db <- read.table(file = taxa_db_file,
+                      header = FALSE,
+                      col.names = c("short_name", "assembly","annotation","ortho_col"))
+
+# Extract species prefix from assembly
 taxa_db <- taxa_db %>%
-  mutate(species_prefix = sub("^(\\w+)-.*$", "\\1", reference_name),
-         accession_name = sub("^\\w+-([^-]+).*$", "\\1", reference_name))
+  mutate(species_prefix = sub("^(\\w+)-.*$", "\\1", assembly))
 
 # List of target genes
-target_genes <- c("ipt6", "hpc1", "nrg11", "nlp1", "gdsl", "tcptf9")
-gene_ids <- c(
-  "ipt6" = "Zm00001eb062030",
-  "hpc1" = "Zm00001eb121780",
-  "nrg11" = "Zm00001eb206940",
-  "nlp1" = "Zm00001eb231720",
-  "gdsl" = "Zm00001eb268440",
-  "tcptf9" = "Zm00001eb372490"
-)
+gene_ids <- targets$locus
+names(gene_ids) <- targets$symbol
+
 
 # Create a data frame with all combinations of genes and accessions
 ref_label<- expand.grid(
   gene = target_genes,
-  accession = taxa_db$accession,
+  short_name = taxa_db$short_name,
   stringsAsFactors = FALSE
 ) %>%
-  left_join(taxa_db, by = "accession") %>%
+  left_join(taxa_db, by = "short_name") %>%
   mutate(
     fastq_prefix = NA,
     fastq_sample = NA,
     sample_n = NA,
-    seqid = paste0(gene, "_", accession),
+    seqid = paste0(gene, "_", short_name),
     ancestry_call = case_when(
-      accession == "B73" ~ "Recurrent",
-      accession == "TdFl" ~ NA,
+      short_name == "B73" ~ "Recurrent",
+      short_name == "TdFl" ~ NA,
       .default ="Donor"),
     ancestry_prefix = case_when(
-      accession == "B73" ~ "R", 
-      accession == "TdFL" ~ NA,
+      short_name == "B73" ~ "R", 
+      short_name == "TdFL" ~ NA,
       .default = "D"),
     donor_accession = NA,
     label_1 = seqid
@@ -183,17 +173,17 @@ ref_label <- ref_label %>%
   mutate(
     # Handle the special cases for label_2
     label_2 = case_when(
-      accession == "Zd" & species_prefix == "Zd" ~ paste0(ancestry_prefix, "_Zd"),
-      accession == "Zn" & species_prefix == "Zn" ~ paste0(ancestry_prefix, "_Zn"),
-      accession == "Zh" & species_prefix == "Zh" ~ paste0(ancestry_prefix, "_Zh"),
-      TRUE ~ paste0(ancestry_prefix, "_", species_prefix, "_", accession)
+      short_name == "Zd" & species_prefix == "Zd" ~ paste0(ancestry_prefix, "_Zd"),
+      short_name == "Zn" & species_prefix == "Zn" ~ paste0(ancestry_prefix, "_Zn"),
+      short_name == "Zh" & species_prefix == "Zh" ~ paste0(ancestry_prefix, "_Zh"),
+      TRUE ~ paste0(ancestry_prefix, "_", species_prefix, "_", short_name)
     ),
     # Handle the special cases for label_3
     label_3 = case_when(
-      accession == "Zd" & species_prefix == "Zd" ~ "Zd",
-      accession == "Zn" & species_prefix == "Zn" ~ "Zn",
-      accession == "Zh" & species_prefix == "Zh" ~ "Zh",
-      TRUE ~ paste0(species_prefix, "_", accession)
+      short_name == "Zd" & species_prefix == "Zd" ~ "Zd",
+      short_name == "Zn" & species_prefix == "Zn" ~ "Zn",
+      short_name == "Zh" & species_prefix == "Zh" ~ "Zh",
+      TRUE ~ paste0(species_prefix, "_", short_name)
     )
   ) %>%
   select(

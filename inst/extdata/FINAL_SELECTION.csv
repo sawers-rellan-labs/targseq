@@ -1,0 +1,97 @@
+genes,old_line_id,line_id,fastq_prefix,donor_accession,taxa,hpc1,gpat15,nrg11,ipt6,tcptf9,nlp15,gdsl
+"nlp15, tcptf9, gpat15",CIM10003_P3_P3_P3.2.1.1,Zd.0010_P3_P3_P3.2.1.1,Zd0010_P3_P3_P3211,Zd.0010,Zdip,Recurrent,Donor,Recurrent,Recurrent,Donor,Donor,Recurrent
+"nlp15, aaap69, gpat15, ipt6",CIM10003_P3_P3_P3.4.1.1,Zd.0010_P3_P3_P3.4.1.1,Zd0010_P3_P3_P3411,Zd.0010,Zdip,Recurrent,Donor,Recurrent,Donor,Recurrent,Donor,Recurrent
+"hpc1, ipt6",CIM10003_P3_P4_P2.3.1.1,Zd.0010_P3_P4_P2.3.1.1,Zd0010_P3_P4_P2311,Zd.0010,Zdip,Donor,Recurrent,Recurrent,Donor,Recurrent,Recurrent,Recurrent
+hpc1,JSG-RMM-LCL-551_P2_P3_P1.2.1.1,Zd.0020_P2_P3_P1.2.1.1,Zd0020_P2_P3_P1211,Zd.0020,Zdip,Donor,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent
+"tcptf9, ipt6",JSG-RMM-LCL-551_P3_P4_P2.1.1.1,Zd.0020_P3_P4_P2.1.1.1,Zd0020_P3_P4_P2111,Zd.0020,Zdip,Recurrent,Recurrent,Recurrent,Donor,Donor,Recurrent,Recurrent
+"gdsl, aaap69, nlp15, ipt6",JSG-RMM-LCL-551_P3_P4_P3.2.1.1,Zd.0020_P3_P4_P3.2.1.1,Zd0020_P3_P4_P3211,Zd.0020,Zdip,Recurrent,Recurrent,Recurrent,Donor,Recurrent,Donor,Donor
+"hpc1, aaap69, ipt6",JLVTKV-719_P2_P5_P5.2.1.1,Zd.0030_P2_P5_P5.2.1.1,Zd0030_P2_P5_P5211,Zd.0030,Zdip,Donor,Recurrent,Recurrent,Donor,Recurrent,Recurrent,Recurrent
+"gdsl, nrg11, hpc1",JLVTKV-720_P1_P4_P3.1.1.1,Zd.0040_P1_P4_P3.1.1.1,Zd0040_P1_P4_P3111,Zd.0040,Zdip,Donor,Recurrent,Donor,Recurrent,Recurrent,Recurrent,Donor
+"gdsl, aaap69, tcptf9",H1_P3_P2_P4.1.1.1,Zh.0020_P3_P2_P4.1.1.1,Zh0020_P3_P2_P4111,Zh.0020,Hueh,Recurrent,Recurrent,Recurrent,Recurrent,Donor,Recurrent,Donor
+hpc1,H1_P3_P5_P1.2.1.1,Zh.0020_P3_P5_P1.2.1.1,Zh0020_P3_P5_P1211,Zh.0020,Hueh,Donor,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent
+"gpat15, hpc1, ipt6",H2_P4_P1_P2.2.1.1,Zh.0030_P4_P1_P2.2.1.1,Zh0030_P4_P1_P2211,Zh.0030,Hueh,Donor,Donor,Recurrent,Donor,Recurrent,Recurrent,Recurrent
+"gdsl, aaap69, tcptf9",H2_P4_P3_P1.1.1.1,Zh.0030_P4_P3_P1.1.1.1,Zh0030_P4_P3_P1111,Zh.0030,Hueh,Recurrent,Recurrent,Recurrent,Recurrent,Donor,Recurrent,Donor
+"gdsl, nrg11",G1_P1_P2_P1.4.1.1,Zl.0010_P1_P2_P1.4.1.1,Zl0010_P1_P2_P1411,Zl.0010,Zlux,Recurrent,Recurrent,Donor,Recurrent,Recurrent,Recurrent,Donor
+"nlp15, tcptf9, gpat15",G1_P1_P4_P1.4.1.1,Zl.0010_P1_P4_P1.4.1.1,Zl0010_P1_P4_P1411,Zl.0010,Zlux,Recurrent,Donor,Recurrent,Recurrent,Donor,Donor,Recurrent
+"gdsl, nlp15, gpat15",G3_P3_P1_P1.4.1.1,Zl.0020_P3_P1_P1.4.1.1,Zl0020_P3_P1_P1411,Zl.0020,Zlux,Recurrent,Donor,Recurrent,Recurrent,Recurrent,Donor,Donor
+"ipt6, nlp15, gpat15",G3_P3_P1_P2.4.1.1,Zl.0020_P3_P1_P2.4.1.1,Zl0020_P3_P1_P2411,Zl.0020,Zlux,Recurrent,Donor,Recurrent,Donor,Recurrent,Donor,Recurrent
+"hpc1, tcptf9",G3_P3_P4_P3.5.1.1,Zl.0020_P3_P4_P3.5.1.1,Zl0020_P3_P4_P3511,Zl.0020,Zlux,Donor,Recurrent,Recurrent,Recurrent,Donor,Recurrent,Recurrent
+"hpc1, aaap69, tcptf9",G6_P4_P4_P2.4.1.1,Zl.0040_P4_P4_P2.4.1.1,Zl0040_P4_P4_P2411,Zl.0040,Zlux,Donor,Recurrent,Recurrent,Recurrent,Donor,Recurrent,Recurrent
+"gpat15, nlp15, hpc1",FAC-P87_P1_P5_P1.2.1.1,Zl.0050_P1_P5_P1.2.1.1,Zl0050_P1_P5_P1211,Zl.0050,Zlux,Donor,Donor,Recurrent,Recurrent,Recurrent,Donor,Recurrent
+"nrg11, tcptf9",JSG-RMM-LCL-483_P3_P5_P1.2.1.1,Zv.0010_P3_P5_P1.2.1.1,Zv0010_P3_P5_P1211,Zv.0010,Bals,Recurrent,Recurrent,Donor,Recurrent,Donor,Recurrent,Recurrent
+"hpc1, tcptf9, nrg11, ipt6",JSG-RMM-LCL-487_P1_P3_P1.1.1.1,Zv.0030_P1_P3_P1.1.1.1,Zv0030_P1_P3_P1111,Zv.0030,Bals,Donor,Recurrent,Donor,Donor,Donor,Recurrent,Recurrent
+"hpc1, aaap69, ipt6",JLNCM-657_P4_P4_P1.2.1.1,Zv.0060_P4_P4_P1.2.1.1,Zv0060_P4_P4_P1211,Zv.0060,Bals,Donor,Recurrent,Recurrent,Donor,Recurrent,Recurrent,Recurrent
+"gdsl, nrg11",JLNCM-646_P2_P1_P1.2.1.1,Zv.0080_P2_P1_P1.2.1.1,Zv0080_P2_P1_P1211,Zv.0080,Bals,Recurrent,Recurrent,Donor,Recurrent,Recurrent,Recurrent,Donor
+"gpat15, hpc1, nrg11, nlp15",JLHNM-661_P2_P3_P2.1.1.1,Zv.0120_P2_P3_P2.1.1.1,Zv0120_P2_P3_P2111,Zv.0120,Bals,Donor,Donor,Donor,Recurrent,Recurrent,Donor,Recurrent
+"hpc1, ipt6",JLHNM-664_P3_P3_P1.1.1.1,Zv.0140_P3_P3_P1.1.1.1,Zv0140_P3_P3_P1111,Zv.0140,Bals,Donor,Recurrent,Recurrent,Donor,Recurrent,Recurrent,Recurrent
+"hpc1, tcptf9, ipt6",JSG-RMM-LCL-495_P4_P1_P1.1.1.1,Zv.0150_P4_P1_P1.1.1.1,Zv0150_P4_P1_P1111,Zv.0150,Bals,Donor,Recurrent,Recurrent,Donor,Donor,Recurrent,Recurrent
+"nlp15, tcptf9, ipt6",JSG-LCL-674_P3_P4_P1.1.1.1,Zv.0190_P3_P4_P1.1.1.1,Zv0190_P3_P4_P1111,Zv.0190,Bals,Recurrent,Recurrent,Recurrent,Donor,Donor,Donor,Recurrent
+"nrg11, aaap69, ipt6",DMA-2008-1_P3_P2_P1.1.1.1,Zv.0200_P3_P2_P1.1.1.1,Zv0200_P3_P2_P1111,Zv.0200,Bals,Recurrent,Recurrent,Donor,Donor,Recurrent,Recurrent,Recurrent
+"nrg11, tcptf9, ipt6",JSGYRMM-458_P1_P4_P2.2.1.1,Zv.0210_P1_P4_P2.2.1.1,Zv0210_P1_P4_P2211,Zv.0210,Bals,Recurrent,Recurrent,Donor,Donor,Donor,Recurrent,Recurrent
+"aaap69, gdsl, tcptf9",JSGYRMM-458_P1_P5_P1.1.1.1,Zv.0210_P1_P5_P1.1.1.1,Zv0210_P1_P5_P1111,Zv.0210,Bals,Recurrent,Recurrent,Recurrent,Recurrent,Donor,Recurrent,Donor
+hpc1,JSGYRMM-457_P3_P1_P2.2.1.1,Zv.0220_P3_P1_P2.2.1.1,Zv0220_P3_P1_P2211,Zv.0220,Bals,Donor,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent
+"nrg11, aaap69, ipt6",JSGYRMM-457_P3_P2_P1.1.1.1,Zv.0220_P3_P2_P1.1.1.1,Zv0220_P3_P2_P1111,Zv.0220,Bals,Recurrent,Recurrent,Donor,Donor,Recurrent,Recurrent,Recurrent
+"gpat15, aaap69, nlp15, ipt6",JSGYRMM-457_P3_P4_P1.1.1.1,Zv.0220_P3_P4_P1.1.1.1,Zv0220_P3_P4_P1111,Zv.0220,Bals,Recurrent,Donor,Recurrent,Donor,Recurrent,Donor,Recurrent
+"gdsl, hpc1",JSG-RMM-LCL-473_P3_P2_P1.3.1.1,Zv.0250_P3_P2_P1.3.1.1,Zv0250_P3_P2_P1311,Zv.0250,Bals,Donor,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent,Donor
+"gpat15, hpc1, nlp15",JSG-RMM-LCL-517_P2_P2_P1.1.1.1,Zv.0260_P2_P2_P1.1.1.1,Zv0260_P2_P2_P1111,Zv.0260,Bals,Donor,Donor,Recurrent,Recurrent,Recurrent,Donor,Recurrent
+"hpc1, aaap69, nrg11, ipt6",JACV-T-082_P2_P2_P2.1.1.1,Zv.0290_P2_P2_P2.1.1.1,Zv0290_P2_P2_P2111,Zv.0290,Bals,Donor,Recurrent,Donor,Donor,Recurrent,Recurrent,Recurrent
+"gpat15, nrg11, nlp15, aaap69",JSG-LCL-676_P3_P2_P1.3.1.1,Zv.0310_P3_P2_P1.3.1.1,Zv0310_P3_P2_P1311,Zv.0310,Bals,Recurrent,Donor,Donor,Recurrent,Recurrent,Donor,Recurrent
+"hpc1, ipt6",JSG-LCL-676_P3_P3_P1.2.1.1,Zv.0310_P3_P3_P1.2.1.1,Zv0310_P3_P3_P1211,Zv.0310,Bals,Donor,Recurrent,Recurrent,Donor,Recurrent,Recurrent,Recurrent
+"hpc1, ipt6",JSGYLOS-142_P2_P2_P1.1.1.1,Zv.0340_P2_P2_P1.1.1.1,Zv0340_P2_P2_P1111,Zv.0340,Bals,Donor,Recurrent,Recurrent,Donor,Recurrent,Recurrent,Recurrent
+"hpc1, ipt6",JSG-RMM-558_P3_P3_P1.3.1.1,Zv.0370_P3_P3_P1.3.1.1,Zv0370_P3_P3_P1311,Zv.0370,Bals,Donor,Recurrent,Recurrent,Donor,Recurrent,Recurrent,Recurrent
+"gpat15, nlp15, ipt6",JSG-RMM-558_P3_P4_P1.1.1.1,Zv.0370_P3_P4_P1.1.1.1,Zv0370_P3_P4_P1111,Zv.0370,Bals,Recurrent,Donor,Recurrent,Donor,Recurrent,Donor,Recurrent
+"gdsl, nrg11",RMM-11_P2_P3_P2.1.1.1,Zv.0410_P2_P3_P2.1.1.1,Zv0410_P2_P3_P2111,Zv.0410,Bals,Recurrent,Recurrent,Donor,Recurrent,Recurrent,Recurrent,Donor
+"gpat15, nlp15, tcptf9",JSG-RMM-LCL-539_P3_P1_P1.1.1.1,Zv.0420_P3_P1_P1.1.1.1,Zv0420_P3_P1_P1111,Zv.0420,Bals,Recurrent,Donor,Recurrent,Recurrent,Donor,Donor,Recurrent
+"hpc1, tcptf9, ipt6",JSG-RMM-LCL-539_P3_P3_P1.2.1.1,Zv.0420_P3_P3_P1.2.1.1,Zv0420_P3_P3_P1211,Zv.0420,Bals,Donor,Recurrent,Recurrent,Donor,Donor,Recurrent,Recurrent
+"gdsl, nlp15, tcptf9, gpat15",JSG-RMM-LCL-548_P4_P4_P1.1.1.1,Zv.0440_P4_P4_P1.1.1.1,Zv0440_P4_P4_P1111,Zv.0440,Bals,Recurrent,Donor,Recurrent,Recurrent,Donor,Donor,Donor
+"hpc1, tcptf9",JSG-467_P2_P5_P1.2.1.1,Zv.0470_P2_P5_P1.2.1.1,Zv0470_P2_P5_P1211,Zv.0470,Bals,Donor,Recurrent,Recurrent,Recurrent,Donor,Recurrent,Recurrent
+"gpat15, gdsl, nlp15, tcptf9",JSG-LCL-704_P3_P1_P1.2.1.1,Zv.0480_P3_P1_P1.2.1.1,Zv0480_P3_P1_P1211,Zv.0480,Bals,Recurrent,Donor,Recurrent,Recurrent,Donor,Donor,Donor
+"hpc1, tcptf9",JSG-LCL-704_P3_P2_P1.2.1.1,Zv.0480_P3_P2_P1.2.1.1,Zv0480_P3_P2_P1211,Zv.0480,Bals,Donor,Recurrent,Recurrent,Recurrent,Donor,Recurrent,Recurrent
+"gpat15, nlp15, ipt6",JSG-RMM-LCL-476_P2_P1_P2.1.1.1,Zx.0030_P2_P1_P2.1.1.1,Zx0030_P2_P1_P2111,Zx.0030,Chal,Recurrent,Donor,Recurrent,Donor,Recurrent,Donor,Recurrent
+"gdsl, tcptf9",JSG-RMM-LCL-476_P2_P2_P1.2.1.1,Zx.0030_P2_P2_P1.2.1.1,Zx0030_P2_P2_P1211,Zx.0030,Chal,Recurrent,Recurrent,Recurrent,Recurrent,Donor,Recurrent,Donor
+"nrg11, hpc1, ipt6",JSG-RMM-LCL-476_P2_P2_P2.1.1.1,Zx.0030_P2_P2_P2.1.1.1,Zx0030_P2_P2_P2111,Zx.0030,Chal,Donor,Recurrent,Donor,Donor,Recurrent,Recurrent,Recurrent
+"hpc1, aaap69",JSG-JMHC-631_P2_P5_P1.1.1.1,Zx.0090_P2_P5_P1.1.1.1,Zx0090_P2_P5_P1111,Zx.0090,Chal,Donor,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent
+hpc1,CIM11362_P2_P3_P1.2.1.1,Zx.0140_P2_P3_P1.2.1.1,Zx0140_P2_P3_P1211,Zx.0140,Chal,Donor,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent
+"gdsl, tcptf9",CIM11362_P2_P4_P1.2.1.1,Zx.0140_P2_P4_P1.2.1.1,Zx0140_P2_P4_P1211,Zx.0140,Chal,Recurrent,Recurrent,Recurrent,Recurrent,Donor,Recurrent,Donor
+"gpat15, nlp15, aaap69, ipt6",JSGYRMM-463_P2_P3_P2.1.1.1,Zx.0160_P2_P3_P2.1.1.1,Zx0160_P2_P3_P2111,Zx.0160,Chal,Recurrent,Donor,Recurrent,Donor,Recurrent,Donor,Recurrent
+"hpc1, nrg11, ipt6",JSGYRMM-463_P2_P4_P1.1.1.1,Zx.0160_P2_P4_P1.1.1.1,Zx0160_P2_P4_P1111,Zx.0160,Chal,Donor,Recurrent,Donor,Donor,Recurrent,Recurrent,Recurrent
+"hpc1, hpc1, tcptf9",JSGYRMM-463_P2_P5_P1.2.1.1,Zx.0160_P2_P5_P1.2.1.1,Zx0160_P2_P5_P1211,Zx.0160,Chal,Donor,Recurrent,Recurrent,Recurrent,Donor,Recurrent,Recurrent
+"gpat15, nlp15, nrg11",JSG-JMHC-639_P2_P4_P1.1.1.1,Zx.0190_P2_P4_P1.1.1.1,Zx0190_P2_P4_P1111,Zx.0190,Chal,Recurrent,Donor,Donor,Recurrent,Recurrent,Donor,Recurrent
+hpc1,JSG-JMHC-639_P2_P5_P1.2.1.1,Zx.0190_P2_P5_P1.2.1.1,Zx0190_P2_P5_P1211,Zx.0190,Chal,Donor,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent
+"nrg11, aaap69, ipt6",CIM27215_P2_P4_P1.1.1.1,Zx.0220_P2_P4_P1.1.1.1,Zx0220_P2_P4_P1111,Zx.0220,Chal,Recurrent,Recurrent,Donor,Donor,Recurrent,Recurrent,Recurrent
+hpc1,JSG-LCL-559_P2_P4_P2.1.1.1,Zx.0340_P2_P4_P2.1.1.1,Zx0340_P2_P4_P2111,Zx.0340,Chal,Donor,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent
+hpc1,JSG-RMM-LCL-536_P1_P4_P2.2.1.1,Zx.0350_P1_P4_P2.2.1.1,Zx0350_P1_P4_P2211,Zx.0350,Mesa,Donor,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent
+"hpc1, nlp15",JSGYRMM-450_P2_P2_P1.3.1.1,Zx.0360_P2_P2_P1.3.1.1,Zx0360_P2_P2_P1311,Zx.0360,Mesa,Donor,Recurrent,Recurrent,Recurrent,Recurrent,Donor,Recurrent
+"gdsl, hpc1, ipt6",JSGYRMM-450_P2_P5_P1.2.1.1,Zx.0360_P2_P5_P1.2.1.1,Zx0360_P2_P5_P1211,Zx.0360,Mesa,Donor,Recurrent,Recurrent,Donor,Recurrent,Recurrent,Donor
+"nrg11, aaap69, ipt6",JACV-T-018_P2_P4_P1.3.1.1,Zx.0370_P2_P4_P1.3.1.1,Zx0370_P2_P4_P1311,Zx.0370,Mesa,Recurrent,Recurrent,Donor,Donor,Recurrent,Recurrent,Recurrent
+"hpc1, ipt6",JSG-LCL-565_P2_P4_P1.1.1.1,Zx.0380_P2_P4_P1.1.1.1,Zx0380_P2_P4_P1111,Zx.0380,Mesa,Donor,Recurrent,Recurrent,Donor,Recurrent,Recurrent,Recurrent
+"aaap69, tcptf9, ipt6",JSGYRMM-444_P2_P2_P1.1.1.1,Zx.0390_P2_P2_P1.1.1.1,Zx0390_P2_P2_P1111,Zx.0390,Mesa,Recurrent,Recurrent,Recurrent,Donor,Donor,Recurrent,Recurrent
+"nrg11, hpc1",JSGYRMM-444_P2_P3_P2.2.1.1,Zx.0390_P2_P3_P2.2.1.1,Zx0390_P2_P3_P2211,Zx.0390,Mesa,Donor,Recurrent,Donor,Recurrent,Recurrent,Recurrent,Recurrent
+hpc1,JSGYRMM-438_P1_P4_P2.2.1.1,Zx.0400_P1_P4_P2.2.1.1,Zx0400_P1_P4_P2211,Zx.0400,Mesa,Donor,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent
+"hpc1, tcptf9, ipt6",JSGYRMM-440_P1_P5_P1.2.1.1,Zx.0430_P1_P5_P1.2.1.1,Zx0430_P1_P5_P1211,Zx.0430,Mesa,Donor,Recurrent,Recurrent,Donor,Donor,Recurrent,Recurrent
+"gdsl, hpc1, nrg11, ipt6",JSGYLOS-75_P1_P5_P1.2.1.1,Zx.0440_P1_P5_P1.2.1.1,Zx0440_P1_P5_P1211,Zx.0440,Mesa,Donor,Recurrent,Donor,Donor,Recurrent,Recurrent,Donor
+"aaap69, tcptf9, ipt6",JSGYLOS-75_P2_P5_P1.2.1.1,Zx.0440_P2_P5_P1.2.1.1,Zx0440_P2_P5_P1211,Zx.0440,Mesa,Recurrent,Recurrent,Recurrent,Donor,Donor,Recurrent,Recurrent
+"gdsl, nlp15, gpat15, tcptf9",JSG-LCL-JGRF-586_P1_P2_P2.1.1.1,Zx.0450_P1_P2_P2.1.1.1,Zx0450_P1_P2_P2111,Zx.0450,Mesa,Recurrent,Donor,Recurrent,Recurrent,Donor,Donor,Donor
+hpc1,JSG-LCL-JGRF-586_P1_P5_P2.1.1.1,Zx.0450_P1_P5_P2.1.1.1,Zx0450_P1_P5_P2111,Zx.0450,Mesa,Donor,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent
+"hpc1, ipt6",JSG-427_P2_P3_P1.2.1.1,Zx.0470_P2_P3_P1.2.1.1,Zx0470_P2_P3_P1211,Zx.0470,Mesa,Donor,Recurrent,Recurrent,Donor,Recurrent,Recurrent,Recurrent
+"hpc1, nlp15, gpat15, ipt6",JSGYRMM-447_P4_P2_P1.2.1.1,Zx.0490_P4_P2_P1.2.1.1,Zx0490_P4_P2_P1211,Zx.0490,Mesa,Donor,Donor,Recurrent,Donor,Recurrent,Donor,Recurrent
+"nrg11, nlp15, gpat15",JSGYRMM-447_P4_P3_P1.2.1.1,Zx.0490_P4_P3_P1.2.1.1,Zx0490_P4_P3_P1211,Zx.0490,Mesa,Recurrent,Donor,Donor,Recurrent,Recurrent,Donor,Recurrent
+"gpat15, hpc1",JSG-LCL-689_P2_P2_P1.1.1.1,Zx.0500_P2_P2_P1.1.1.1,Zx0500_P2_P2_P1111,Zx.0500,Mesa,Donor,Donor,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent
+"nrg11, aaap69, tcptf9, ipt6",JSG-LCL-689_P2_P3_P1.1.1.1,Zx.0500_P2_P3_P1.1.1.1,Zx0500_P2_P3_P1111,Zx.0500,Mesa,Recurrent,Recurrent,Donor,Donor,Donor,Recurrent,Recurrent
+"nlp15, nrg11, aaap69",JSG-LCL-689_P2_P5_P1.2.1.1,Zx.0500_P2_P5_P1.2.1.1,Zx0500_P2_P5_P1211,Zx.0500,Mesa,Recurrent,Recurrent,Donor,Recurrent,Recurrent,Donor,Recurrent
+"gdsl, nrg11",JSG-465_P1_P3_P1.2.1.1,Zx.0510_P1_P3_P1.2.1.1,Zx0510_P1_P3_P1211,Zx.0510,Mesa,Recurrent,Recurrent,Donor,Recurrent,Recurrent,Recurrent,Donor
+"hpc1, tcptf9",JSG-465_P1_P3_P2.1.1.1,Zx.0510_P1_P3_P2.1.1.1,Zx0510_P1_P3_P2111,Zx.0510,Mesa,Donor,Recurrent,Recurrent,Recurrent,Donor,Recurrent,Recurrent
+"hpc1, nlp15, tcptf9",CIM11365_P2_P4_P1.1.1.1,Zx.0520_P2_P4_P1.1.1.1,Zx0520_P2_P4_P1111,Zx.0520,Mesa,Donor,Recurrent,Recurrent,Recurrent,Donor,Donor,Recurrent
+"gpat15, nlp15, ipt6",JSG-SRV-EAM-708_P3_P5_P1.1.1.1,Zx.0540_P3_P5_P1.1.1.1,Zx0540_P3_P5_P1111,Zx.0540,Dura,Recurrent,Donor,Recurrent,Donor,Recurrent,Donor,Recurrent
+hpc1,JSG-SRV-EAM-708_P3_P5_P3.2.1.1,Zx.0540_P3_P5_P3.2.1.1,Zx0540_P3_P5_P3211,Zx.0540,Dura,Donor,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent
+"aaap69, tcptf9, ipt6",JSG-SRV-EAM-708_P3_P5_P6.1.1.1,Zx.0540_P3_P5_P6.1.1.1,Zx0540_P3_P5_P6111,Zx.0540,Dura,Recurrent,Recurrent,Recurrent,Donor,Donor,Recurrent,Recurrent
+"gdsl, hpc1, nrg11",JSG-SRV-EAM-705_P4_P2_P2.5.1.1,Zx.0550_P4_P2_P2.5.1.1,Zx0550_P4_P2_P2511,Zx.0550,Dura,Donor,Recurrent,Donor,Recurrent,Recurrent,Recurrent,Donor
+"hpc1, aaap69, ipt6",JSG-SRV-EAM-705_P4_P2_P4.2.1.1,Zx.0550_P4_P2_P4.2.1.1,Zx0550_P4_P2_P4211,Zx.0550,Dura,Donor,Recurrent,Recurrent,Donor,Recurrent,Recurrent,Recurrent
+"gpat15, nlp15, tcptf9",JSG-SRV-EAM-705_P4_P3_P5.3.1.1,Zx.0550_P4_P3_P5.3.1.1,Zx0550_P4_P3_P5311,Zx.0550,Dura,Recurrent,Donor,Recurrent,Recurrent,Donor,Donor,Recurrent
+"hpc1, ipt6",JSGYRMM-429_P2_P3_P2.1.1.1,Zx.0560_P2_P3_P2.1.1.1,Zx0560_P2_P3_P2111,Zx.0560,Dura,Donor,Recurrent,Recurrent,Donor,Recurrent,Recurrent,Recurrent
+"gpat15, nlp15, hpc1, nrg11",JSGYRMM-429_P4_P3_P5.1.1.1,Zx.0560_P4_P3_P5.1.1.1,Zx0560_P4_P3_P5111,Zx.0560,Dura,Donor,Donor,Donor,Recurrent,Recurrent,Donor,Recurrent
+hpc1,JSG-SRV-606_P2_P2_P1.3.1.1,Zx.0570_P2_P2_P1.3.1.1,Zx0570_P2_P2_P1311,Zx.0570,Nobo,Donor,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent
+"gdsl, nrg11",JSG-SRV-606_P2_P3_P1.3.1.1,Zx.0570_P2_P3_P1.3.1.1,Zx0570_P2_P3_P1311,Zx.0570,Nobo,Recurrent,Recurrent,Donor,Recurrent,Recurrent,Recurrent,Donor
+"gdsl, nlp15",JSG-SRV-604_P2_P5_P2.4.1.1,Zx.0580_P2_P5_P2.4.1.1,Zx0580_P2_P5_P2411,Zx.0580,Nobo,Recurrent,Recurrent,Recurrent,Recurrent,Recurrent,Donor,Donor
+"gdsl, ipt6",JSG-SRV-604_P2_P5_P5.1.1.1,Zx.0580_P2_P5_P5.1.1.1,Zx0580_P2_P5_P5111,Zx.0580,Nobo,Recurrent,Recurrent,Recurrent,Donor,Recurrent,Recurrent,Donor
+"nrg11, hpc1, tcptf9",JSG-SRV-604_P3_P5_P1.2.1.1,Zx.0580_P3_P5_P1.2.1.1,Zx0580_P3_P5_P1211,Zx.0580,Nobo,Donor,Recurrent,Donor,Recurrent,Donor,Recurrent,Recurrent
